@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BotVerse - WhatsApp Auto-Reply for Your Business</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0B0F1A;
+    --bg-elevated: #131926;
+    --violet: #7C5CFF;
+    --teal: #2DD4BF;
+    --text: #F5F3FF;
+    --muted: #8B93A7;
+    --border: rgba(255,255,255,0.08);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(11,15,26,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo-dot {
+    width: 10px; height: 10px;
+    background: var(--violet);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--violet);
+  }
+  .nav-links { display: flex; gap: 32px; }
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .nav-cta {
+    background: var(--violet);
+    color: white;
+    padding: 10px 22px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .hero {
+    padding: 100px 24px 80px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(124,92,255,0.1);
+    border: 1px solid rgba(124,92,255,0.3);
+    color: var(--teal);
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-size: 52px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+  }
+  .hero h1 span {
+    background: linear-gradient(135deg, var(--violet), var(--teal));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hero p {
+    color: var(--muted);
+    font-size: 18px;
+    margin-bottom: 32px;
+    max-width: 480px;
+  }
+  .hero-actions { display: flex; gap: 16px; }
+  .btn-primary {
+    background: var(--violet);
+    color: white;
+    padding: 14px 28px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    padding: 14px 28px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    border: 1px solid var(--border);
+  }
+
+  .chat-mockup {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .chat-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .chat-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--violet), var(--teal));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .chat-name { font-weight: 600; font-size: 15px; }
+  .chat-status { font-size: 12px; color: var(--teal); display: flex; align-items: center; gap: 6px; }
+  .chat-status::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--teal);
+    border-radius: 50%;
+  }
+  .bubble {
+    max-width: 78%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 14px;
+    margin-bottom: 10px;
+    opacity: 0;
+    animation: pop 0.4s ease forwards;
+  }
+  .bubble.in { background: rgba(255,255,255,0.06); border-bottom-left-radius: 4px; }
+  .bubble.out { background: var(--violet); margin-left: auto; border-bottom-right-radius: 4px; color: white; }
+  .bubble.d1 { animation-delay: 0.3s; }
+  .bubble.d3 { animation-delay: 1.9s; }
+  .typing-dots {
+    display: inline-flex;
+    gap: 4px;
+    padding: 12px 14px;
+    background: var(--violet);
+    border-radius: 14px;
+    border-bottom-right-radius: 4px;
+    margin-left: auto;
+    width: fit-content;
+    opacity: 0;
+    animation: pop 0.3s ease forwards;
+    animation-delay: 1.5s;
+  }
+  .typing-dots span {
+    width: 6px; height: 6px;
+    background: white;
+    border-radius: 50%;
+    animation: bounce 1.2s infinite ease-in-out;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes pop { to { opacity: 1; } }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-4px); }
+  }
+
+  .section { padding: 90px 24px; }
+  .section-head { text-align: center; max-width: 600px; margin: 0 auto 56px; }
+  .section-eyebrow {
+    color: var(--violet);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .section-head h2 { font-size: 36px; margin-bottom: 12px; }
+  .section-head p { color: var(--muted); font-size: 16px; }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .feature-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+  }
+  .feature-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: rgba(124,92,255,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    font-size: 20px;
+  }
+  .feature-card h3 { font-size: 17px; margin-bottom: 8px; }
+  .feature-card p { color: var(--muted); font-size: 14px; }
+
+  .steps { max-width: 800px; margin: 0 auto; }
+  .step {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 20px;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .step:last-child { border-bottom: none; }
+  .step-num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--violet);
+    opacity: 0.5;
+  }
+  .step h3 { font-size: 18px; margin-bottom: 6px; }
+  .step p { color: var(--muted); font-size: 14px; }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .price-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 28px;
+  }
+  .price-card.featured {
+    border-color: var(--violet);
+    background: linear-gradient(180deg, rgba(124,92,255,0.08), var(--bg-elevated));
+    position: relative;
+  }
+  .featured-tag {
+    position: absolute;
+    top: -12px;
+    left: 28px;
+    background: var(--violet);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 100px;
+  }
+  .price-card h3 { font-size: 16px; color: var(--muted); font-weight: 500; margin-bottom: 8px; }
+  .price-amount { font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; margin-bottom: 20px; }
+  .price-amount span { font-size: 15px; color: var(--muted); font-weight: 400; }
+  .price-features { list-style: none; margin-bottom: 24px; }
+  .price-features li { padding: 8px 0; font-size: 14px; color: var(--muted); display: flex; gap: 10px; }
+  .price-features li::before { content: '✓'; color: var(--teal); font-weight: 700; }
+  .price-btn {
+    display: block;
+    text-align: center;
+    padding: 12px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .price-card.featured .price-btn { background: var(--violet); border-color: var(--violet); }
+
+  .cta-section { text-align: center; padding: 100px 24px; }
+  .cta-box {
+    max-width: 700px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, rgba(124,92,255,0.15), rgba(45,212,191,0.08));
+    border: 1px solid rgba(124,92,255,0.3);
+    border-radius: 24px;
+    padding: 56px 40px;
+  }
+  .cta-box h2 { font-size: 32px; margin-bottom: 14px; }
+  .cta-box p { color: var(--muted); margin-bottom: 28px; }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 40px 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; padding-top: 60px; }
+    .hero h1 { font-size: 36px; }
+    .features-grid, .pricing-grid { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+    .bubble { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <div class="logo"><span class="logo-dot"></span>BotVerse</div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <a href="#pricing" class="nav-cta">Get started</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div>
+    <div class="eyebrow">● Live right now</div>
+    <h1>Ask your business data <span>anything.</span></h1>
+    <p>BotVerse reads your sales, stock, and orders — then answers your questions instantly. No spreadsheets to dig through.</p>
+    <div class="hero-actions">
+      <a href="#pricing" class="btn-primary">Start free trial</a>
+      <a href="#how" class="btn-secondary">See how it works</a>
+    </div>
+  </div>
+  <div class="chat-mockup">
+    <div class="chat-header">
+      <div class="chat-avatar">SL</div>
+      <div>
+        <div class="chat-name">Sunil's Electronics</div>
+        <div class="chat-status">Connected to your data</div>
+      </div>
+    </div>
+    <div class="bubble in d1">What was my best selling item this month?</div>
+    <div class="typing-dots"><span></span><span></span><span></span></div>
+    <div class="bubble out d3">JBL Bluetooth Speaker — 34 units sold, Rs. 289,000 in revenue.</div>
+  </div>
+</section>
+
+<section class="section" id="features">
+  <div class="section-head">
+    <div class="section-eyebrow">Why BotVerse</div>
+    <h2>Your data, but you can talk to it</h2>
+    <p>No formulas, no filters, no searching through rows.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">💬</div>
+      <h3>Ask in plain language</h3>
+      <p>"What's my profit this week?" — get a straight answer, not a spreadsheet.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>Upload once, ask forever</h3>
+      <p>Bring your Excel, CSV, or Google Sheet — BotVerse remembers it all.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <h3>Private by default</h3>
+      <p>Your data is yours alone. No one else can see or query it.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🗣️</div>
+      <h3>Sinhala & English</h3>
+      <p>Ask however you speak. BotVerse replies in the same language.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📈</div>
+      <h3>Instant insights</h3>
+      <p>Trends, totals, comparisons — calculated the moment you ask.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🕐</div>
+      <h3>Ask history</h3>
+      <p>Every question you've asked is saved, so you can find it again.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="how">
+  <div class="section-head">
+    <div class="section-eyebrow">Getting started</div>
+    <h2>Live in three steps</h2>
+    <p>No developer needed.</p>
+  </div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div>
+        <h3>Sign up</h3>
+        <p>Create your account in under a minute.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div>
+        <h3>Upload your data</h3>
+        <p>Add a spreadsheet or connect a Google Sheet.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div>
+        <h3>Start asking questions</h3>
+        <p>Type your question the way you'd ask a person.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="pricing">
+  <div class="section-head">
+    <div class="section-eyebrow">Pricing</div>
+    <h2>Simple plans, no surprises</h2>
+    <p>Pay manually via bank transfer — we'll activate your account within a few hours.</p>
+  </div>
+  <div class="pricing-grid">
+    <div class="price-card">
+      <h3>Starter</h3>
+      <div class="price-amount">Rs. 2,500<span>/mo</span></div>
+      <ul class="price-features">
+        <li>Up to 200 questions/month</li>
+        <li>1 business profile</li>
+        <li>Excel/CSV upload</li>
+      </ul>
+      <a href="#" class="price-btn">Choose Starter</a>
+    </div>
+    <div class="price-card featured">
+      <div class="featured-tag">Most popular</div>
+      <h3>Growth</h3>
+      <div class="price-amount">Rs. 5,500<span>/mo</span></div>
+      <ul class="price-features">
+        <li>Up to 1,000 questions/month</li>
+        <li>Google Sheets live sync</li>
+        <li>Insight dashboard</li>
+      </ul>
+      <a href="#" class="price-btn">Choose Growth</a>
+    </div>
+    <div class="price-card">
+      <h3>Business</h3>
+      <div class="price-amount">Rs. 12,000<span>/mo</span></div>
+      <ul class="price-features">
+        <li>Unlimited questions</li>
+        <li>Multiple data sources</li>
+        <li>Priority support</li>
+      </ul>
+      <a href="#" class="price-btn">Choose Business</a>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="cta-box">
+    <h2>Stop digging through spreadsheets.</h2>
+    <p>Set up takes minutes. Cancel anytime.</p>
+    <a href="#pricing" class="btn-primary">Get started with BotVerse</a>
+  </div>
+</section>
+
+<footer>
+  © 2026 BotVerse. Built for businesses across Sri Lanka.
+</footer>
+
+</body>
+</html>
