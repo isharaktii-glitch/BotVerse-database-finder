@@ -36,7 +36,7 @@ module.exports = async (req, res) => {
     const businessData = dataResult.rows[0].data_json;
     const dataName = dataResult.rows[0].data_name;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     const prompt = `You are a business data assistant. The user uploaded a file called "${dataName}" with this data (JSON array of rows):
 
@@ -57,7 +57,7 @@ Analyze the data and answer the question directly and concisely, in the same lan
     res.status(200).json({ success: true, answer });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Could not process your question. Please try again.' });
+    console.error('ASK ERROR:', err.message);
+    res.status(500).json({ error: 'Could not process your question: ' + err.message });
   }
 };
