@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log in - BotVerse</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0B0F1A;
+    --bg-elevated: #131926;
+    --violet: #7C5CFF;
+    --teal: #2DD4BF;
+    --text: #F5F3FF;
+    --muted: #8B93A7;
+    --border: rgba(255,255,255,0.08);
+    --error: #FF6B6B;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  h1 { font-family: 'Space Grotesk', sans-serif; }
+
+  header { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+  .logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--text);
+    width: fit-content;
+  }
+  .logo-dot {
+    width: 10px; height: 10px;
+    background: var(--violet);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--violet);
+  }
+
+  main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+  }
+
+  .auth-box { width: 100%; max-width: 400px; }
+  .auth-box h1 { font-size: 28px; margin-bottom: 8px; }
+  .auth-box .subtitle { color: var(--muted); font-size: 15px; margin-bottom: 32px; }
+
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .field input {
+    width: 100%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 14px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.2s;
+  }
+  .field input:focus { outline: none; border-color: var(--violet); }
+
+  .submit-btn {
+    width: 100%;
+    background: var(--violet);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(124,92,255,0.4); }
+  .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .switch-link { text-align: center; margin-top: 24px; font-size: 14px; color: var(--muted); }
+  .switch-link a { color: var(--teal); text-decoration: none; font-weight: 600; }
+
+  .message {
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    margin-bottom: 18px;
+    display: none;
+  }
+  .message.error {
+    background: rgba(255,107,107,0.1);
+    border: 1px solid rgba(255,107,107,0.3);
+    color: var(--error);
+    display: block;
+  }
+
+  a:focus-visible, button:focus-visible, input:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 3px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="logo"><span class="logo-dot"></span>BotVerse</a>
+</header>
+
+<main>
+  <div class="auth-box">
+    <h1>Welcome back</h1>
+    <p class="subtitle">Log in to ask your business data anything.</p>
+
+    <div class="message" id="message"></div>
+
+    <form id="loginForm">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" required placeholder="you@business.com">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" required placeholder="Your password">
+      </div>
+      <button type="submit" class="submit-btn" id="submitBtn">Log in</button>
+    </form>
+
+    <div class="switch-link">
+      Don't have an account? <a href="/signup.html">Sign up</a>
+    </div>
+  </div>
+</main>
+
+<script>
+  const form = document.getElementById('loginForm');
+  const messageBox = document.getElementById('message');
+  const submitBtn = document.getElementById('submitBtn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    messageBox.className = 'message';
+    messageBox.textContent = '';
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Logging in...';
+
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        messageBox.className = 'message error';
+        messageBox.textContent = data.error || 'Invalid email or password.';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Log in';
+        return;
+      }
+
+      localStorage.setItem('botverse_token', data.token);
+      localStorage.setItem('botverse_user', JSON.stringify(data.user));
+
+      window.location.href = '/dashboard.html';
+
+    } catch (err) {
+      messageBox.className = 'message error';
+      messageBox.textContent = 'Could not connect. Please check your connection and try again.';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Log in';
+    }
+  });
+</script>
+
+</body>
+</html>
