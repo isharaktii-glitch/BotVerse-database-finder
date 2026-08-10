@@ -228,7 +228,132 @@
 </div>
 
 <script>
-// Script part 2 will go here
+const token = localStorage.getItem('botverse_token');
+const userStr = localStorage.getItem('botverse_user');
+
+if (!token || !userStr) {
+  window.location.href = '/login.html';
+}
+
+const user = JSON.parse(userStr);
+document.getElementById('businessName').textContent = user.businessName;
+
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  localStorage.removeItem('botverse_token');
+  localStorage.removeItem('botverse_user');
+  window.location.href = '/login.html';
+});
+
+const fileInput = document.getElementById('fileInput');
+const fileStatus = document.getElementById('fileStatus');
+const dataBadge = document.getElementById('dataBadge');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+const chatMessages = document.getElementById('chatMessages');
+
+fileInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  fileStatus.textContent = 'Uploading...';
+
+  const reader = new FileReader();
+  reader.onload = async (event) => {
+    const csvText = event.target.result;
+    const rows = csvText.split('\n').filter(r => r.trim());
+    const headers = rows[0].split(',').map(h => h.trim());
+    const data = rows.slice(1).map(row => {
+      const values = row.split(',');
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = values[i] ? values[i].trim() : ''; });
+      return obj;
+    });
+
+    try {
+      const res = await fetch('/api/upload-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ dataName: file.name, data })
+      });
+      const result = await res.json();
+
+      if (!res.ok) {
+        fileStatus.textContent = 'Upload failed: ' + (result.error || 'unknown error');
+        return;
+      }
+
+      fileStatus.textContent = file.name;
+      dataBadge.innerHTML = '<div class="data-badge">' + data.length + ' rows loaded</div>';
+      chatInput.disabled = false;
+      sendBtn.disabled = false;
+      chatMessages.innerHTML = '';
+
+    } catch (err) {
+      fileStatus.textContent = 'Upload failed. Please try again.';
+    }
+  };
+  reader.readAsText(file);
+});
+
+function addBubble(text, type) {
+  const emptyState = chatMessages.querySelector('.empty-state');
+  if (emptyState) emptyState.remove();
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ' + type;
+  bubble.textContent = text;
+  chatMessages.appendChild(bubble);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return bubble;
+}
+
+async function sendQuestion() {
+  const question = chatInput.value.trim();
+  if (!question) return;
+
+  addBubble(question, 'user');
+  chatInput.value = '';
+  sendBtn.disabled = true;
+  chatInput.disabled = true;
+
+  const loadingBubble = addBubble('Thinking...', 'bot loading');
+
+  try {
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({ question })
+    });
+    const result = await res.json();
+
+    loadingBubble.remove();
+
+    if (!res.ok) {
+      addBubble(result.error || 'Something went wrong. Please try again.', 'bot');
+    } else {
+      addBubble(result.answer, 'bot');
+    }
+  } catch (err) {
+    loadingBubble.remove();
+    addBubble('Could not connect. Please check your connection and try again.', 'bot');
+  }
+
+  sendBtn.disabled = false;
+  chatInput.disabled = false;
+  chatInput.focus();
+}
+
+sendBtn.addEventListener('click', sendQuestion);
+chatInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') sendQuestion();
+});
 </script>
+
 </body>
 </html>
