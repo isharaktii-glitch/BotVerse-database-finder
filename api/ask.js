@@ -36,7 +36,7 @@ module.exports = async (req, res) => {
     const businessData = dataResult.rows[0].data_json;
     const dataName = dataResult.rows[0].data_name;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `You are a business data assistant. The user uploaded a file called "${dataName}" with this data (JSON array of rows):
 
