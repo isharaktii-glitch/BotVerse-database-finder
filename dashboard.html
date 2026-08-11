@@ -79,7 +79,30 @@
     margin-bottom: 24px;
   }
   .upload-section h2 { font-size: 17px; margin-bottom: 4px; }
-  .upload-section .desc { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+  .upload-section .desc { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+
+  .source-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .source-tab {
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 10px 4px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-right: 16px;
+  }
+  .source-tab.active { color: var(--text); border-bottom-color: var(--violet); }
+
+  .source-panel { display: none; }
+  .source-panel.active { display: block; }
 
   .upload-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
   .file-label {
@@ -95,6 +118,33 @@
   .file-label input { display: none; }
   .file-status { font-size: 13px; color: var(--muted); }
 
+  .link-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .link-row input {
+    flex: 1;
+    min-width: 200px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+  }
+  .link-row input:focus { outline: none; border-color: var(--violet); }
+  .link-btn {
+    background: var(--violet);
+    color: white;
+    border: none;
+    padding: 0 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+  }
+  .link-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .link-hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
   .data-badge {
     display: inline-flex;
     align-items: center;
@@ -106,9 +156,17 @@
     border-radius: 100px;
     font-size: 12px;
     font-weight: 600;
-    margin-top: 12px;
+    margin-top: 14px;
   }
   .data-badge::before { content: '●'; }
+
+  .error-text {
+    color: var(--error);
+    font-size: 13px;
+    margin-top: 10px;
+    display: none;
+  }
+  .error-text.show { display: block; }
 
   .chat-section {
     background: var(--bg-elevated);
@@ -203,14 +261,41 @@
 <div class="layout">
   <div class="upload-section">
     <h2>Your business data</h2>
-    <p class="desc">Upload a CSV or Excel file with your sales, stock, or orders.</p>
-    <div class="upload-row">
-      <label class="file-label">
-        Choose file
-        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls">
-      </label>
-      <span class="file-status" id="fileStatus">No file uploaded yet</span>
+    <p class="desc">Connect a data source to start asking questions.</p>
+
+    <div class="source-tabs">
+      <button class="source-tab active" data-tab="file">File</button>
+      <button class="source-tab" data-tab="sheet">Google Sheet</button>
+      <button class="source-tab" data-tab="website">Website</button>
     </div>
+
+    <div class="source-panel active" id="panel-file">
+      <div class="upload-row">
+        <label class="file-label">
+          Choose file
+          <input type="file" id="fileInput" accept=".csv,.xlsx,.xls">
+        </label>
+        <span class="file-status" id="fileStatus">No file uploaded yet</span>
+      </div>
+    </div>
+
+    <div class="source-panel" id="panel-sheet">
+      <div class="link-row">
+        <input type="text" id="sheetInput" placeholder="Paste your Google Sheets link">
+        <button class="link-btn" id="sheetBtn">Connect</button>
+      </div>
+      <p class="link-hint">Set sharing to "Anyone with the link can view" first.</p>
+    </div>
+
+    <div class="source-panel" id="panel-website">
+      <div class="link-row">
+        <input type="text" id="websiteInput" placeholder="https://yourbusiness.com">
+        <button class="link-btn" id="websiteBtn">Connect</button>
+      </div>
+      <p class="link-hint">Works best on simple business websites.</p>
+    </div>
+
+    <div class="error-text" id="sourceError"></div>
     <div id="dataBadge"></div>
   </div>
 
@@ -218,7 +303,7 @@
     <div class="chat-messages" id="chatMessages">
       <div class="empty-state">
         <div class="icon">💬</div>
-        Upload your data, then ask a question like "what's my total revenue?"
+        Connect your data, then ask a question like "what's my total revenue?"
       </div>
     </div>
     <div class="chat-input-row">
@@ -245,12 +330,39 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   window.location.href = '/login.html';
 });
 
-const fileInput = document.getElementById('fileInput');
-const fileStatus = document.getElementById('fileStatus');
-const dataBadge = document.getElementById('dataBadge');
+document.querySelectorAll('.source-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.source-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.source-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    hideError();
+  });
+});
+
 const chatInput = document.getElementById('chatInput');
 const sendBtn = document.getElementById('sendBtn');
 const chatMessages = document.getElementById('chatMessages');
+const dataBadge = document.getElementById('dataBadge');
+const sourceError = document.getElementById('sourceError');
+
+function showError(msg) {
+  sourceError.textContent = msg;
+  sourceError.classList.add('show');
+}
+function hideError() {
+  sourceError.classList.remove('show');
+}
+function onDataConnected(label) {
+  dataBadge.innerHTML = '<div class="data-badge">' + label + '</div>';
+  chatInput.disabled = false;
+  sendBtn.disabled = false;
+  chatMessages.innerHTML = '';
+  hideError();
+}
+
+const fileInput = document.getElementById('fileInput');
+const fileStatus = document.getElementById('fileStatus');
 
 fileInput.addEventListener('change', async (e) => {
   const file = e.target.files[0];
@@ -258,12 +370,10 @@ fileInput.addEventListener('change', async (e) => {
 
   fileStatus.textContent = 'Uploading...';
   const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
-
   const reader = new FileReader();
 
   reader.onload = async (event) => {
     let data;
-
     try {
       if (isExcel) {
         const workbook = XLSX.read(event.target.result, { type: 'binary' });
@@ -280,49 +390,87 @@ fileInput.addEventListener('change', async (e) => {
           return obj;
         });
       }
-    } catch (parseErr) {
-      fileStatus.textContent = 'Could not read that file. Please check the format.';
+    } catch (err) {
+      fileStatus.textContent = 'Could not read that file.';
       return;
     }
 
     try {
       const res = await fetch('/api/upload-data', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: JSON.stringify({ dataName: file.name, data })
       });
       const result = await res.json();
-
-      if (!res.ok) {
-        fileStatus.textContent = 'Upload failed: ' + (result.error || 'unknown error');
-        return;
-      }
-
+      if (!res.ok) { fileStatus.textContent = 'Upload failed: ' + (result.error || ''); return; }
       fileStatus.textContent = file.name;
-      dataBadge.innerHTML = '<div class="data-badge">' + data.length + ' rows loaded</div>';
-      chatInput.disabled = false;
-      sendBtn.disabled = false;
-      chatMessages.innerHTML = '';
-
+      onDataConnected(data.length + ' rows loaded');
     } catch (err) {
       fileStatus.textContent = 'Upload failed. Please try again.';
     }
   };
 
-  if (isExcel) {
-    reader.readAsBinaryString(file);
-  } else {
-    reader.readAsText(file);
+  if (isExcel) reader.readAsBinaryString(file);
+  else reader.readAsText(file);
+});
+
+const sheetInput = document.getElementById('sheetInput');
+const sheetBtn = document.getElementById('sheetBtn');
+
+sheetBtn.addEventListener('click', async () => {
+  const sheetUrl = sheetInput.value.trim();
+  if (!sheetUrl) return;
+  hideError();
+  sheetBtn.disabled = true;
+  sheetBtn.textContent = 'Connecting...';
+
+  try {
+    const res = await fetch('/api/add-sheet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ sheetUrl })
+    });
+    const result = await res.json();
+    if (!res.ok) { showError(result.error || 'Could not connect that sheet.'); }
+    else { onDataConnected(result.rowCount + ' rows loaded from Google Sheet'); }
+  } catch (err) {
+    showError('Could not connect. Please try again.');
   }
+
+  sheetBtn.disabled = false;
+  sheetBtn.textContent = 'Connect';
+});
+
+const websiteInput = document.getElementById('websiteInput');
+const websiteBtn = document.getElementById('websiteBtn');
+
+websiteBtn.addEventListener('click', async () => {
+  const url = websiteInput.value.trim();
+  if (!url) return;
+  hideError();
+  websiteBtn.disabled = true;
+  websiteBtn.textContent = 'Connecting...';
+
+  try {
+    const res = await fetch('/api/add-website', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ url })
+    });
+    const result = await res.json();
+    if (!res.ok) { showError(result.error || 'Could not connect that website.'); }
+    else { onDataConnected('Website connected'); }
+  } catch (err) {
+    showError('Could not connect. Please try again.');
+  }
+
+  websiteBtn.disabled = false;
+  websiteBtn.textContent = 'Connect';
 });
 
 function addBubble(text, type) {
   const emptyState = chatMessages.querySelector('.empty-state');
   if (emptyState) emptyState.remove();
-
   const bubble = document.createElement('div');
   bubble.className = 'bubble ' + type;
   bubble.textContent = text;
@@ -345,24 +493,16 @@ async function sendQuestion() {
   try {
     const res = await fetch('/api/ask', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ question })
     });
     const result = await res.json();
-
     loadingBubble.remove();
-
-    if (!res.ok) {
-      addBubble(result.error || 'Something went wrong. Please try again.', 'bot');
-    } else {
-      addBubble(result.answer, 'bot');
-    }
+    if (!res.ok) addBubble(result.error || 'Something went wrong.', 'bot');
+    else addBubble(result.answer, 'bot');
   } catch (err) {
     loadingBubble.remove();
-    addBubble('Could not connect. Please check your connection and try again.', 'bot');
+    addBubble('Could not connect. Please try again.', 'bot');
   }
 
   sendBtn.disabled = false;
@@ -371,9 +511,7 @@ async function sendQuestion() {
 }
 
 sendBtn.addEventListener('click', sendQuestion);
-chatInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') sendQuestion();
-});
+chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendQuestion(); });
 </script>
 
 </body>
