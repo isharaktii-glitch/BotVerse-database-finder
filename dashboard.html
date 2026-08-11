@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard - BotVerse</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
@@ -202,11 +203,11 @@
 <div class="layout">
   <div class="upload-section">
     <h2>Your business data</h2>
-    <p class="desc">Upload a CSV file with your sales, stock, or orders.</p>
+    <p class="desc">Upload a CSV or Excel file with your sales, stock, or orders.</p>
     <div class="upload-row">
       <label class="file-label">
         Choose file
-        <input type="file" id="fileInput" accept=".csv">
+        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls">
       </label>
       <span class="file-status" id="fileStatus">No file uploaded yet</span>
     </div>
@@ -256,18 +257,33 @@ fileInput.addEventListener('change', async (e) => {
   if (!file) return;
 
   fileStatus.textContent = 'Uploading...';
+  const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
 
   const reader = new FileReader();
+
   reader.onload = async (event) => {
-    const csvText = event.target.result;
-    const rows = csvText.split('\n').filter(r => r.trim());
-    const headers = rows[0].split(',').map(h => h.trim());
-    const data = rows.slice(1).map(row => {
-      const values = row.split(',');
-      const obj = {};
-      headers.forEach((h, i) => { obj[h] = values[i] ? values[i].trim() : ''; });
-      return obj;
-    });
+    let data;
+
+    try {
+      if (isExcel) {
+        const workbook = XLSX.read(event.target.result, { type: 'binary' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        data = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+      } else {
+        const csvText = event.target.result;
+        const rows = csvText.split('\n').filter(r => r.trim());
+        const headers = rows[0].split(',').map(h => h.trim());
+        data = rows.slice(1).map(row => {
+          const values = row.split(',');
+          const obj = {};
+          headers.forEach((h, i) => { obj[h] = values[i] ? values[i].trim() : ''; });
+          return obj;
+        });
+      }
+    } catch (parseErr) {
+      fileStatus.textContent = 'Could not read that file. Please check the format.';
+      return;
+    }
 
     try {
       const res = await fetch('/api/upload-data', {
@@ -295,7 +311,12 @@ fileInput.addEventListener('change', async (e) => {
       fileStatus.textContent = 'Upload failed. Please try again.';
     }
   };
-  reader.readAsText(file);
+
+  if (isExcel) {
+    reader.readAsBinaryString(file);
+  } else {
+    reader.readAsText(file);
+  }
 });
 
 function addBubble(text, type) {
