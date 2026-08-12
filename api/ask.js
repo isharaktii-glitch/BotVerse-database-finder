@@ -38,23 +38,48 @@ module.exports = async (req, res) => {
 
     const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
 
-    const prompt = `You are a business data assistant. The user uploaded a file called "${dataName}" with this data (JSON array of rows):
+    let contextText;
+    if (businessData && businessData.type === 'website') {
+      contextText = `Website content from ${businessData.url}:\n\n${businessData.content}`;
+    } else {
+      contextText = JSON.stringify(businessData).slice(0, 15000);
+    }
 
-${JSON.stringify(businessData).slice(0, 15000)}
+    const prompt = `You are a business data assistant. The user connected a data source called "${dataName}" with this content:
+
+${contextText}
 
 The user's question: "${question}"
 
-Analyze the data and answer the question directly and concisely, in the same language the question was asked in (Sinhala or English). If the answer requires a calculation (sum, average, count, etc.), do the calculation accurately based on the actual data shown above. If the data doesn't contain information to answer the question, say so clearly. Keep the answer short and business-friendly, no more than 3-4 sentences.`;
+If the user is asking for a chart, graph, or visual comparison (words like "chart", "graph", "compare", "grpah", "visualize" or Sinhala equivalents), respond ONLY with valid JSON in this exact format, nothing else, no markdown fences:
+{"isChart": true, "chartType": "bar", "title": "Chart title here", "labels": ["Label1", "Label2"], "datasets": [{"label": "Series name", "data": [123, 456]}]}
+
+Use "bar" for comparisons between items, "line" for trends over time, "pie" for proportions of a whole. Calculate all values accurately based on the actual data shown above. Write the title and labels in the same language as the question. Use at most 8 labels.
+
+If the user is asking a normal question (not requesting a chart), respond ONLY with valid JSON in this format:
+{"isChart": false, "answer": "Your answer here in the same language as the question, 3-4 sentences max"}
+
+Respond with ONLY the JSON object on a single line, nothing else, no markdown code fences, no explanation text before or after.`;
 
     const result = await model.generateContent(prompt);
-    const answer = result.response.text();
+    let rawText = result.response.text().trim();
 
+    rawText = rawText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+
+    let parsed;
+    try {
+      parsed = JSON.parse(rawText);
+    } catch (parseErr) {
+      parsed = { isChart: false, answer: rawText };
+    }
+
+    const historyText = parsed.isChart ? ('[Chart] ' + parsed.title) : parsed.answer;
     await pool.query(
       'INSERT INTO chat_history (user_id, question, answer) VALUES ($1, $2, $3)',
-      [decoded.userId, question, answer]
+      [decoded.userId, question, historyText]
     );
 
-    res.status(200).json({ success: true, answer });
+    res.status(200).json({ success: true, ...parsed });
 
   } catch (err) {
     console.error('ASK ERROR:', err.message);
