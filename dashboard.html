@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard - BotVerse</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
@@ -174,7 +175,7 @@
     border-radius: 16px;
     display: flex;
     flex-direction: column;
-    height: 500px;
+    height: 560px;
   }
   .chat-messages {
     flex: 1;
@@ -182,7 +183,7 @@
     padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
   }
   .empty-state {
     margin: auto;
@@ -194,7 +195,7 @@
   .empty-state .icon { font-size: 32px; margin-bottom: 12px; }
 
   .bubble {
-    max-width: 80%;
+    max-width: 85%;
     padding: 11px 15px;
     border-radius: 14px;
     font-size: 14px;
@@ -204,14 +205,35 @@
     color: white;
     align-self: flex-end;
     border-bottom-right-radius: 4px;
+    max-width: 80%;
   }
   .bubble.bot {
     background: rgba(255,255,255,0.06);
     align-self: flex-start;
     border-bottom-left-radius: 4px;
     white-space: pre-wrap;
+    max-width: 80%;
   }
   .bubble.bot.loading { color: var(--muted); font-style: italic; }
+
+  .chart-card {
+    align-self: stretch;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    opacity: 0;
+    transform: translateY(8px);
+    animation: chartIn 0.4s ease forwards;
+  }
+  @keyframes chartIn { to { opacity: 1; transform: translateY(0); } }
+  .chart-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .chart-canvas-wrap { position: relative; height: 220px; }
 
   .chat-input-row {
     display: flex;
@@ -303,7 +325,7 @@
     <div class="chat-messages" id="chatMessages">
       <div class="empty-state">
         <div class="icon">💬</div>
-        Connect your data, then ask a question like "what's my total revenue?"
+        Connect your data, then ask a question — try "show a chart of my sales by product"
       </div>
     </div>
     <div class="chat-input-row">
@@ -479,6 +501,69 @@ function addBubble(text, type) {
   return bubble;
 }
 
+const chartColors = ['#7C5CFF', '#2DD4BF', '#FF6B9D', '#FFB84D', '#4DA6FF', '#B084FF', '#4DFFB8', '#FF8A65'];
+
+function addChart(chartData) {
+  const emptyState = chatMessages.querySelector('.empty-state');
+  if (emptyState) emptyState.remove();
+
+  const card = document.createElement('div');
+  card.className = 'chart-card';
+
+  const titleEl = document.createElement('div');
+  titleEl.className = 'chart-title';
+  titleEl.textContent = chartData.title || 'Chart';
+  card.appendChild(titleEl);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'chart-canvas-wrap';
+  const canvas = document.createElement('canvas');
+  wrap.appendChild(canvas);
+  card.appendChild(wrap);
+
+  chatMessages.appendChild(card);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  const ctx = canvas.getContext('2d');
+  const type = chartData.chartType || 'bar';
+
+  const datasets = (chartData.datasets || []).map((ds, i) => ({
+    label: ds.label || 'Data',
+    data: ds.data || [],
+    backgroundColor: type === 'pie'
+      ? chartColors
+      : chartColors[i % chartColors.length] + 'CC',
+    borderColor: chartColors[i % chartColors.length],
+    borderWidth: type === 'line' ? 2 : 1,
+    borderRadius: type === 'bar' ? 6 : 0,
+    tension: 0.3,
+    fill: type === 'line' ? false : true
+  }));
+
+  new Chart(ctx, {
+    type: type,
+    data: {
+      labels: chartData.labels || [],
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 900, easing: 'easeOutQuart' },
+      plugins: {
+        legend: {
+          display: datasets.length > 1 || type === 'pie',
+          labels: { color: '#F5F3FF', font: { size: 11 } }
+        }
+      },
+      scales: type === 'pie' ? {} : {
+        x: { ticks: { color: '#8B93A7', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.06)' } },
+        y: { ticks: { color: '#8B93A7', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.06)' } }
+      }
+    }
+  });
+}
+
 async function sendQuestion() {
   const question = chatInput.value.trim();
   if (!question) return;
@@ -498,8 +583,14 @@ async function sendQuestion() {
     });
     const result = await res.json();
     loadingBubble.remove();
-    if (!res.ok) addBubble(result.error || 'Something went wrong.', 'bot');
-    else addBubble(result.answer, 'bot');
+
+    if (!res.ok) {
+      addBubble(result.error || 'Something went wrong.', 'bot');
+    } else if (result.isChart) {
+      addChart(result);
+    } else {
+      addBubble(result.answer, 'bot');
+    }
   } catch (err) {
     loadingBubble.remove();
     addBubble('Could not connect. Please try again.', 'bot');
