@@ -8,326 +8,84 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
   :root {
-    --bg: #0B0F1A;
-    --bg-elevated: #131926;
-    --violet: #7C5CFF;
-    --teal: #2DD4BF;
-    --text: #F5F3FF;
-    --muted: #8B93A7;
-    --border: rgba(255,255,255,0.08);
-    --error: #FF6B6B;
+    --bg: #0B0F1A; --bg-elevated: #131926; --violet: #7C5CFF; --teal: #2DD4BF;
+    --text: #F5F3FF; --muted: #8B93A7; --border: rgba(255,255,255,0.08); --error: #FF6B6B;
   }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    line-height: 1.6;
-    min-height: 100vh;
-  }
-
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; min-height: 100vh; }
   h1, h2 { font-family: 'Space Grotesk', sans-serif; }
-
-  header {
-    padding: 16px 24px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  .logo {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .logo-dot {
-    width: 10px; height: 10px;
-    background: var(--violet);
-    border-radius: 50%;
-    box-shadow: 0 0 12px var(--violet);
-  }
+  header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .logo { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; display: flex; align-items: center; gap: 8px; }
+  .logo-dot { width: 10px; height: 10px; background: var(--violet); border-radius: 50%; box-shadow: 0 0 12px var(--violet); }
   .header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .business-name { font-size: 14px; color: var(--muted); }
-  .logout-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 13px;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-  }
-
-  .layout {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 32px 20px;
-  }
-
-  .upload-section {
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 24px;
-  }
+  .logout-btn { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: 'Inter', sans-serif; }
+  .layout { max-width: 900px; margin: 0 auto; padding: 32px 20px; }
+  .upload-section { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 24px; }
   .upload-section h2 { font-size: 17px; margin-bottom: 4px; }
   .upload-section .desc { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
-
-  .source-tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-    flex-wrap: wrap;
-  }
-  .source-tab {
-    background: none;
-    border: none;
-    color: var(--muted);
-    padding: 10px 4px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'Inter', sans-serif;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    margin-right: 16px;
-  }
+  .source-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .source-tab { background: none; border: none; color: var(--muted); padding: 10px 4px; font-size: 13px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; border-bottom: 2px solid transparent; margin-right: 16px; }
   .source-tab.active { color: var(--text); border-bottom-color: var(--violet); }
-
   .source-panel { display: none; }
   .source-panel.active { display: block; }
-
   .upload-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-  .file-label {
-    background: var(--violet);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-block;
-  }
+  .file-label { background: var(--violet); color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-block; }
   .file-label input { display: none; }
   .file-status { font-size: 13px; color: var(--muted); }
-
   .link-row { display: flex; gap: 10px; flex-wrap: wrap; }
-  .link-row input {
-    flex: 1;
-    min-width: 200px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 11px 14px;
-    color: var(--text);
-    font-size: 14px;
-    font-family: 'Inter', sans-serif;
-  }
+  .link-row input { flex: 1; min-width: 200px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; color: var(--text); font-size: 14px; font-family: 'Inter', sans-serif; }
   .link-row input:focus { outline: none; border-color: var(--violet); }
-  .link-btn {
-    background: var(--violet);
-    color: white;
-    border: none;
-    padding: 0 20px;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-  }
+  .link-btn { background: var(--violet); color: white; border: none; padding: 0 20px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; font-family: 'Inter', sans-serif; }
   .link-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .link-hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
-
-  .data-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(45,212,191,0.1);
-    border: 1px solid rgba(45,212,191,0.3);
-    color: var(--teal);
-    padding: 6px 12px;
-    border-radius: 100px;
-    font-size: 12px;
-    font-weight: 600;
-    margin-top: 14px;
-  }
+  .data-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(45,212,191,0.1); border: 1px solid rgba(45,212,191,0.3); color: var(--teal); padding: 6px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; margin-top: 14px; }
   .data-badge::before { content: '●'; }
-
-  .doc-result {
-    margin-top: 14px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px;
-    font-size: 13px;
-    display: none;
-  }
+  .doc-result { margin-top: 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; font-size: 13px; display: none; }
   .doc-result.show { display: block; }
   .doc-result .row { display: flex; justify-content: space-between; padding: 4px 0; color: var(--muted); gap: 10px; }
   .doc-result .row b { color: var(--text); font-weight: 500; text-align: right; }
   .priority-high { color: var(--error); font-weight: 600; }
   .priority-medium { color: #FFB84D; font-weight: 600; }
   .priority-low { color: var(--teal); font-weight: 600; }
-
-  .error-text {
-    color: var(--error);
-    font-size: 13px;
-    margin-top: 10px;
-    display: none;
-  }
+  .error-text { color: var(--error); font-size: 13px; margin-top: 10px; display: none; }
   .error-text.show { display: block; }
-
-  .chat-section {
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    display: flex;
-    flex-direction: column;
-    height: 560px;
-  }
-  .chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-  .empty-state {
-    margin: auto;
-    text-align: center;
-    color: var(--muted);
-    font-size: 14px;
-    max-width: 280px;
-  }
+  .chat-section { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 16px; display: flex; flex-direction: column; height: 560px; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .empty-state { margin: auto; text-align: center; color: var(--muted); font-size: 14px; max-width: 280px; }
   .empty-state .icon { font-size: 32px; margin-bottom: 12px; }
-
-  .bubble {
-    max-width: 85%;
-    padding: 11px 15px;
-    border-radius: 14px;
-    font-size: 14px;
-  }
-  .bubble.user {
-    background: var(--violet);
-    color: white;
-    align-self: flex-end;
-    border-bottom-right-radius: 4px;
-    max-width: 80%;
-  }
-  .bubble.bot {
-    background: rgba(255,255,255,0.06);
-    align-self: flex-start;
-    border-bottom-left-radius: 4px;
-    white-space: pre-wrap;
-    max-width: 80%;
-  }
+  .bubble { max-width: 85%; padding: 11px 15px; border-radius: 14px; font-size: 14px; }
+  .bubble.user { background: var(--violet); color: white; align-self: flex-end; border-bottom-right-radius: 4px; max-width: 80%; }
+  .bubble.bot { background: rgba(255,255,255,0.06); align-self: flex-start; border-bottom-left-radius: 4px; white-space: pre-wrap; max-width: 80%; }
   .bubble.bot.loading { color: var(--muted); font-style: italic; }
-
-  .chart-card {
-    align-self: stretch;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 16px;
-    opacity: 0;
-    transform: translateY(8px);
-    animation: chartIn 0.4s ease forwards;
-  }
+  .chart-card { align-self: stretch; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 14px; padding: 16px; opacity: 0; transform: translateY(8px); animation: chartIn 0.4s ease forwards; }
   @keyframes chartIn { to { opacity: 1; transform: translateY(0); } }
-  .chart-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 12px;
-  }
+  .chart-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 12px; }
   .chart-canvas-wrap { position: relative; height: 220px; }
-
-  .chat-input-row {
-    display: flex;
-    gap: 10px;
-    padding: 16px;
-    border-top: 1px solid var(--border);
-  }
-  .chat-input-row input {
-    flex: 1;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    color: var(--text);
-    font-size: 14px;
-    font-family: 'Inter', sans-serif;
-  }
+  .chat-input-row { display: flex; gap: 10px; padding: 16px; border-top: 1px solid var(--border); }
+  .chat-input-row input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; color: var(--text); font-size: 14px; font-family: 'Inter', sans-serif; }
   .chat-input-row input:focus { outline: none; border-color: var(--violet); }
   .chat-input-row input:disabled { opacity: 0.5; }
-  .send-btn {
-    background: var(--violet);
-    color: white;
-    border: none;
-    padding: 0 20px;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-  }
+  .send-btn { background: var(--violet); color: white; border: none; padding: 0 20px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; font-family: 'Inter', sans-serif; }
   .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  .notif-modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
+  .notif-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
   .notif-modal.show { display: flex; }
-  .notif-box {
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 24px;
-    max-width: 380px;
-    width: 100%;
-  }
+  .notif-box { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 16px; padding: 24px; max-width: 380px; width: 100%; }
   .notif-box h2 { font-size: 18px; margin-bottom: 6px; }
   .notif-box .desc { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
   .notif-row { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
   .switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
   .switch input { opacity: 0; width: 0; height: 0; }
-  .slider {
-    position: absolute; cursor: pointer; inset: 0;
-    background: var(--border); border-radius: 24px; transition: 0.2s;
-  }
-  .slider::before {
-    content: ''; position: absolute; height: 18px; width: 18px;
-    left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.2s;
-  }
+  .slider { position: absolute; cursor: pointer; inset: 0; background: var(--border); border-radius: 24px; transition: 0.2s; }
+  .slider::before { content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.2s; }
   .switch input:checked + .slider { background: var(--violet); }
   .switch input:checked + .slider::before { transform: translateX(18px); }
   .notif-box .field { margin-bottom: 14px; }
   .notif-box .field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--muted); }
-  .notif-box .field input, .notif-box .field select {
-    width: 100%; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px; font-family: 'Inter', sans-serif;
-  }
+  .notif-box .field input, .notif-box .field select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px; font-family: 'Inter', sans-serif; }
   .notif-actions { display: flex; gap: 10px; margin-top: 4px; }
   .notif-actions .link-btn, .notif-actions .logout-btn { flex: 1; }
-
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
   button:focus-visible, input:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 </style>
@@ -347,24 +105,18 @@
   <div class="upload-section">
     <h2>Your business data</h2>
     <p class="desc">Connect a data source to start asking questions.</p>
-
     <div class="source-tabs">
       <button class="source-tab active" data-tab="file">File</button>
       <button class="source-tab" data-tab="sheet">Google Sheet</button>
       <button class="source-tab" data-tab="website">Website</button>
       <button class="source-tab" data-tab="document">Document</button>
     </div>
-
     <div class="source-panel active" id="panel-file">
       <div class="upload-row">
-        <label class="file-label">
-          Choose file
-          <input type="file" id="fileInput" accept=".csv,.xlsx,.xls">
-        </label>
+        <label class="file-label">Choose file<input type="file" id="fileInput" accept=".csv,.xlsx,.xls"></label>
         <span class="file-status" id="fileStatus">No file uploaded yet</span>
       </div>
     </div>
-
     <div class="source-panel" id="panel-sheet">
       <div class="link-row">
         <input type="text" id="sheetInput" placeholder="Paste your Google Sheets link">
@@ -372,7 +124,6 @@
       </div>
       <p class="link-hint">Set sharing to "Anyone with the link can view" first.</p>
     </div>
-
     <div class="source-panel" id="panel-website">
       <div class="link-row">
         <input type="text" id="websiteInput" placeholder="https://yourbusiness.com">
@@ -380,19 +131,14 @@
       </div>
       <p class="link-hint">Works best on simple business websites.</p>
     </div>
-
     <div class="source-panel" id="panel-document">
       <div class="upload-row">
-        <label class="file-label">
-          Choose PDF
-          <input type="file" id="pdfInput" accept=".pdf">
-        </label>
+        <label class="file-label">Choose PDF<input type="file" id="pdfInput" accept=".pdf"></label>
         <span class="file-status" id="pdfStatus">No document uploaded yet</span>
       </div>
       <p class="link-hint">BotVerse will read the document and pick out key dates and deadlines.</p>
       <div class="doc-result" id="docResult"></div>
     </div>
-
     <div class="error-text" id="sourceError"></div>
     <div id="dataBadge"></div>
   </div>
@@ -414,20 +160,14 @@
     <div class="notif-box">
       <h2>Deadline notifications</h2>
       <p class="desc">Get an email before your document deadlines arrive.</p>
-
       <div class="notif-row">
-        <label class="switch">
-          <input type="checkbox" id="notifEnabled">
-          <span class="slider"></span>
-        </label>
+        <label class="switch"><input type="checkbox" id="notifEnabled"><span class="slider"></span></label>
         <span>Enable notifications</span>
       </div>
-
       <div class="field">
         <label for="notifEmail">Email address</label>
         <input type="email" id="notifEmail" placeholder="you@business.com">
       </div>
-
       <div class="field">
         <label for="notifDays">Notify me</label>
         <select id="notifDays">
@@ -436,7 +176,6 @@
           <option value="7">7 days before</option>
         </select>
       </div>
-
       <div class="notif-actions">
         <button class="link-btn" id="notifSave">Save</button>
         <button class="logout-btn" id="notifClose">Close</button>
@@ -449,11 +188,7 @@
 <script>
 const token = localStorage.getItem('botverse_token');
 const userStr = localStorage.getItem('botverse_user');
-
-if (!token || !userStr) {
-  window.location.href = '/login.html';
-}
-
+if (!token || !userStr) { window.location.href = '/login.html'; }
 const user = JSON.parse(userStr);
 document.getElementById('businessName').textContent = user.businessName;
 
@@ -479,13 +214,8 @@ const chatMessages = document.getElementById('chatMessages');
 const dataBadge = document.getElementById('dataBadge');
 const sourceError = document.getElementById('sourceError');
 
-function showError(msg) {
-  sourceError.textContent = msg;
-  sourceError.classList.add('show');
-}
-function hideError() {
-  sourceError.classList.remove('show');
-}
+function showError(msg) { sourceError.textContent = msg; sourceError.classList.add('show'); }
+function hideError() { sourceError.classList.remove('show'); }
 function onDataConnected(label) {
   dataBadge.innerHTML = '<div class="data-badge">' + label + '</div>';
   chatInput.disabled = false;
@@ -494,17 +224,46 @@ function onDataConnected(label) {
   hideError();
 }
 
+function addBubble(text, type) {
+  const emptyState = chatMessages.querySelector('.empty-state');
+  if (emptyState) emptyState.remove();
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ' + type;
+  bubble.textContent = text;
+  chatMessages.appendChild(bubble);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return bubble;
+}
+
+async function loadDashboardData() {
+  try {
+    const res = await fetch('/api/get-dashboard-data', { headers: { 'Authorization': 'Bearer ' + token } });
+    const result = await res.json();
+    if (result.hasData && result.dataInfo) {
+      dataBadge.innerHTML = '<div class="data-badge">' + result.dataInfo.label + '</div>';
+      chatInput.disabled = false;
+      sendBtn.disabled = false;
+    }
+    if (result.history && result.history.length > 0) {
+      chatMessages.innerHTML = '';
+      result.history.forEach(item => {
+        addBubble(item.question, 'user');
+        addBubble(item.answer, 'bot');
+      });
+    }
+  } catch (err) { console.error('Could not load dashboard data:', err); }
+}
+loadDashboardData();
+
 const fileInput = document.getElementById('fileInput');
 const fileStatus = document.getElementById('fileStatus');
 
 fileInput.addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
-
   fileStatus.textContent = 'Uploading...';
   const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
   const reader = new FileReader();
-
   reader.onload = async (event) => {
     let data;
     try {
@@ -523,11 +282,7 @@ fileInput.addEventListener('change', async (e) => {
           return obj;
         });
       }
-    } catch (err) {
-      fileStatus.textContent = 'Could not read that file.';
-      return;
-    }
-
+    } catch (err) { fileStatus.textContent = 'Could not read that file.'; return; }
     try {
       const res = await fetch('/api/upload-data', {
         method: 'POST',
@@ -538,25 +293,19 @@ fileInput.addEventListener('change', async (e) => {
       if (!res.ok) { fileStatus.textContent = 'Upload failed: ' + (result.error || ''); return; }
       fileStatus.textContent = file.name;
       onDataConnected(data.length + ' rows loaded');
-    } catch (err) {
-      fileStatus.textContent = 'Upload failed. Please try again.';
-    }
+    } catch (err) { fileStatus.textContent = 'Upload failed. Please try again.'; }
   };
-
-  if (isExcel) reader.readAsBinaryString(file);
-  else reader.readAsText(file);
+  if (isExcel) reader.readAsBinaryString(file); else reader.readAsText(file);
 });
 
 const sheetInput = document.getElementById('sheetInput');
 const sheetBtn = document.getElementById('sheetBtn');
-
 sheetBtn.addEventListener('click', async () => {
   const sheetUrl = sheetInput.value.trim();
   if (!sheetUrl) return;
   hideError();
   sheetBtn.disabled = true;
   sheetBtn.textContent = 'Connecting...';
-
   try {
     const res = await fetch('/api/add-sheet', {
       method: 'POST',
@@ -566,24 +315,19 @@ sheetBtn.addEventListener('click', async () => {
     const result = await res.json();
     if (!res.ok) { showError(result.error || 'Could not connect that sheet.'); }
     else { onDataConnected(result.rowCount + ' rows loaded from Google Sheet'); }
-  } catch (err) {
-    showError('Could not connect. Please try again.');
-  }
-
+  } catch (err) { showError('Could not connect. Please try again.'); }
   sheetBtn.disabled = false;
   sheetBtn.textContent = 'Connect';
 });
 
 const websiteInput = document.getElementById('websiteInput');
 const websiteBtn = document.getElementById('websiteBtn');
-
 websiteBtn.addEventListener('click', async () => {
   const url = websiteInput.value.trim();
   if (!url) return;
   hideError();
   websiteBtn.disabled = true;
   websiteBtn.textContent = 'Connecting...';
-
   try {
     const res = await fetch('/api/add-website', {
       method: 'POST',
@@ -593,10 +337,7 @@ websiteBtn.addEventListener('click', async () => {
     const result = await res.json();
     if (!res.ok) { showError(result.error || 'Could not connect that website.'); }
     else { onDataConnected('Website connected'); }
-  } catch (err) {
-    showError('Could not connect. Please try again.');
-  }
-
+  } catch (err) { showError('Could not connect. Please try again.'); }
   websiteBtn.disabled = false;
   websiteBtn.textContent = 'Connect';
 });
@@ -604,19 +345,15 @@ websiteBtn.addEventListener('click', async () => {
 const pdfInput = document.getElementById('pdfInput');
 const pdfStatus = document.getElementById('pdfStatus');
 const docResult = document.getElementById('docResult');
-
 pdfInput.addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
-
   pdfStatus.textContent = 'Reading document...';
   docResult.classList.remove('show');
   hideError();
-
   const reader = new FileReader();
   reader.onload = async (event) => {
     const base64Data = event.target.result.split(',')[1];
-
     try {
       const res = await fetch('/api/upload-pdf', {
         method: 'POST',
@@ -624,13 +361,7 @@ pdfInput.addEventListener('change', async (e) => {
         body: JSON.stringify({ fileName: file.name, base64Data })
       });
       const result = await res.json();
-
-      if (!res.ok) {
-        pdfStatus.textContent = file.name;
-        showError(result.error || 'Could not process that document.');
-        return;
-      }
-
+      if (!res.ok) { pdfStatus.textContent = file.name; showError(result.error || 'Could not process that document.'); return; }
       pdfStatus.textContent = file.name;
       const priorityClass = 'priority-' + (result.priority || 'low');
       docResult.innerHTML =
@@ -639,52 +370,30 @@ pdfInput.addEventListener('change', async (e) => {
         '<div class="row"><span>Deadline</span><b>' + (result.deadlineDate || 'None found') + '</b></div>' +
         '<div class="row"><span>Priority</span><b class="' + priorityClass + '">' + (result.priority || 'low').toUpperCase() + '</b></div>';
       docResult.classList.add('show');
-
-    } catch (err) {
-      pdfStatus.textContent = file.name;
-      showError('Could not process that document. Please try again.');
-    }
+    } catch (err) { pdfStatus.textContent = file.name; showError('Could not process that document. Please try again.'); }
   };
   reader.readAsDataURL(file);
 });
 
-function addBubble(text, type) {
-  const emptyState = chatMessages.querySelector('.empty-state');
-  if (emptyState) emptyState.remove();
-  const bubble = document.createElement('div');
-  bubble.className = 'bubble ' + type;
-  bubble.textContent = text;
-  chatMessages.appendChild(bubble);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-  return bubble;
-}
-
 const chartColors = ['#7C5CFF', '#2DD4BF', '#FF6B9D', '#FFB84D', '#4DA6FF', '#B084FF', '#4DFFB8', '#FF8A65'];
-
 function addChart(chartData) {
   const emptyState = chatMessages.querySelector('.empty-state');
   if (emptyState) emptyState.remove();
-
   const card = document.createElement('div');
   card.className = 'chart-card';
-
   const titleEl = document.createElement('div');
   titleEl.className = 'chart-title';
   titleEl.textContent = chartData.title || 'Chart';
   card.appendChild(titleEl);
-
   const wrap = document.createElement('div');
   wrap.className = 'chart-canvas-wrap';
   const canvas = document.createElement('canvas');
   wrap.appendChild(canvas);
   card.appendChild(wrap);
-
   chatMessages.appendChild(card);
   chatMessages.scrollTop = chatMessages.scrollHeight;
-
   const ctx = canvas.getContext('2d');
   const type = chartData.chartType || 'bar';
-
   const datasets = (chartData.datasets || []).map((ds, i) => ({
     label: ds.label || 'Data',
     data: ds.data || [],
@@ -695,17 +404,13 @@ function addChart(chartData) {
     tension: 0.3,
     fill: type === 'line' ? false : true
   }));
-
   new Chart(ctx, {
     type: type,
     data: { labels: chartData.labels || [], datasets: datasets },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       animation: { duration: 900, easing: 'easeOutQuart' },
-      plugins: {
-        legend: { display: datasets.length > 1 || type === 'pie', labels: { color: '#F5F3FF', font: { size: 11 } } }
-      },
+      plugins: { legend: { display: datasets.length > 1 || type === 'pie', labels: { color: '#F5F3FF', font: { size: 11 } } } },
       scales: type === 'pie' ? {} : {
         x: { ticks: { color: '#8B93A7', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.06)' } },
         y: { ticks: { color: '#8B93A7', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.06)' } }
@@ -717,14 +422,11 @@ function addChart(chartData) {
 async function sendQuestion() {
   const question = chatInput.value.trim();
   if (!question) return;
-
   addBubble(question, 'user');
   chatInput.value = '';
   sendBtn.disabled = true;
   chatInput.disabled = true;
-
   const loadingBubble = addBubble('Thinking...', 'bot loading');
-
   try {
     const res = await fetch('/api/ask', {
       method: 'POST',
@@ -733,20 +435,14 @@ async function sendQuestion() {
     });
     const result = await res.json();
     loadingBubble.remove();
-
     if (!res.ok) addBubble(result.error || 'Something went wrong.', 'bot');
     else if (result.isChart) addChart(result);
     else addBubble(result.answer, 'bot');
-  } catch (err) {
-    loadingBubble.remove();
-    addBubble('Could not connect. Please try again.', 'bot');
-  }
-
+  } catch (err) { loadingBubble.remove(); addBubble('Could not connect. Please try again.', 'bot'); }
   sendBtn.disabled = false;
   chatInput.disabled = false;
   chatInput.focus();
 }
-
 sendBtn.addEventListener('click', sendQuestion);
 chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendQuestion(); });
 
@@ -762,32 +458,23 @@ const notifStatus = document.getElementById('notifStatus');
 notifBtn.addEventListener('click', async () => {
   notifModal.classList.add('show');
   try {
-    const res = await fetch('/api/notification-settings', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
+    const res = await fetch('/api/notification-settings', { headers: { 'Authorization': 'Bearer ' + token } });
     const settings = await res.json();
     notifEnabled.checked = settings.enabled;
     notifEmail.value = settings.notify_email || user.email || '';
     notifDays.value = settings.days_before_deadline || 3;
   } catch (err) {}
 });
-
 notifClose.addEventListener('click', () => notifModal.classList.remove('show'));
-
 notifSave.addEventListener('click', async () => {
   notifStatus.classList.remove('show');
   notifSave.disabled = true;
   notifSave.textContent = 'Saving...';
-
   try {
     const res = await fetch('/api/notification-settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({
-        enabled: notifEnabled.checked,
-        notifyEmail: notifEmail.value.trim(),
-        daysBeforeDeadline: parseInt(notifDays.value)
-      })
+      body: JSON.stringify({ enabled: notifEnabled.checked, notifyEmail: notifEmail.value.trim(), daysBeforeDeadline: parseInt(notifDays.value) })
     });
     if (!res.ok) throw new Error('Save failed');
     notifStatus.textContent = 'Saved!';
@@ -799,11 +486,9 @@ notifSave.addEventListener('click', async () => {
     notifStatus.style.color = 'var(--error)';
     notifStatus.classList.add('show');
   }
-
   notifSave.disabled = false;
   notifSave.textContent = 'Save';
 });
 </script>
-
 </body>
 </html>
