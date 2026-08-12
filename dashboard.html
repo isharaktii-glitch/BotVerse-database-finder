@@ -22,6 +22,7 @@
     --error: #FF6B6B;
   }
 
+  * { box-sizing: border-box; }
   body {
     background: var(--bg);
     color: var(--text);
@@ -87,6 +88,7 @@
     gap: 8px;
     margin-bottom: 20px;
     border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
   }
   .source-tab {
     background: none;
@@ -160,6 +162,22 @@
     margin-top: 14px;
   }
   .data-badge::before { content: '●'; }
+
+  .doc-result {
+    margin-top: 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 13px;
+    display: none;
+  }
+  .doc-result.show { display: block; }
+  .doc-result .row { display: flex; justify-content: space-between; padding: 4px 0; color: var(--muted); }
+  .doc-result .row b { color: var(--text); font-weight: 500; }
+  .priority-high { color: var(--error); font-weight: 600; }
+  .priority-medium { color: #FFB84D; font-weight: 600; }
+  .priority-low { color: var(--teal); font-weight: 600; }
 
   .error-text {
     color: var(--error);
@@ -289,6 +307,7 @@
       <button class="source-tab active" data-tab="file">File</button>
       <button class="source-tab" data-tab="sheet">Google Sheet</button>
       <button class="source-tab" data-tab="website">Website</button>
+      <button class="source-tab" data-tab="document">Document</button>
     </div>
 
     <div class="source-panel active" id="panel-file">
@@ -315,6 +334,18 @@
         <button class="link-btn" id="websiteBtn">Connect</button>
       </div>
       <p class="link-hint">Works best on simple business websites.</p>
+    </div>
+
+    <div class="source-panel" id="panel-document">
+      <div class="upload-row">
+        <label class="file-label">
+          Choose PDF
+          <input type="file" id="pdfInput" accept=".pdf">
+        </label>
+        <span class="file-status" id="pdfStatus">No document uploaded yet</span>
+      </div>
+      <p class="link-hint">BotVerse will read the document and pick out key dates and deadlines.</p>
+      <div class="doc-result" id="docResult"></div>
     </div>
 
     <div class="error-text" id="sourceError"></div>
@@ -490,6 +521,53 @@ websiteBtn.addEventListener('click', async () => {
   websiteBtn.textContent = 'Connect';
 });
 
+const pdfInput = document.getElementById('pdfInput');
+const pdfStatus = document.getElementById('pdfStatus');
+const docResult = document.getElementById('docResult');
+
+pdfInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  pdfStatus.textContent = 'Reading document...';
+  docResult.classList.remove('show');
+  hideError();
+
+  const reader = new FileReader();
+  reader.onload = async (event) => {
+    const base64Data = event.target.result.split(',')[1];
+
+    try {
+      const res = await fetch('/api/upload-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ fileName: file.name, base64Data })
+      });
+      const result = await res.json();
+
+      if (!res.ok) {
+        pdfStatus.textContent = file.name;
+        showError(result.error || 'Could not process that document.');
+        return;
+      }
+
+      pdfStatus.textContent = file.name;
+      const priorityClass = 'priority-' + (result.priority || 'low');
+      docResult.innerHTML =
+        '<div class="row"><span>Type</span><b>' + (result.docType || 'unknown') + '</b></div>' +
+        '<div class="row"><span>Summary</span><b>' + (result.summary || '-') + '</b></div>' +
+        '<div class="row"><span>Deadline</span><b>' + (result.deadlineDate || 'None found') + '</b></div>' +
+        '<div class="row"><span>Priority</span><b class="' + priorityClass + '">' + (result.priority || 'low').toUpperCase() + '</b></div>';
+      docResult.classList.add('show');
+
+    } catch (err) {
+      pdfStatus.textContent = file.name;
+      showError('Could not process that document. Please try again.');
+    }
+  };
+  reader.readAsDataURL(file);
+});
+
 function addBubble(text, type) {
   const emptyState = chatMessages.querySelector('.empty-state');
   if (emptyState) emptyState.remove();
@@ -530,9 +608,7 @@ function addChart(chartData) {
   const datasets = (chartData.datasets || []).map((ds, i) => ({
     label: ds.label || 'Data',
     data: ds.data || [],
-    backgroundColor: type === 'pie'
-      ? chartColors
-      : chartColors[i % chartColors.length] + 'CC',
+    backgroundColor: type === 'pie' ? chartColors : chartColors[i % chartColors.length] + 'CC',
     borderColor: chartColors[i % chartColors.length],
     borderWidth: type === 'line' ? 2 : 1,
     borderRadius: type === 'bar' ? 6 : 0,
@@ -542,19 +618,13 @@ function addChart(chartData) {
 
   new Chart(ctx, {
     type: type,
-    data: {
-      labels: chartData.labels || [],
-      datasets: datasets
-    },
+    data: { labels: chartData.labels || [], datasets: datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       animation: { duration: 900, easing: 'easeOutQuart' },
       plugins: {
-        legend: {
-          display: datasets.length > 1 || type === 'pie',
-          labels: { color: '#F5F3FF', font: { size: 11 } }
-        }
+        legend: { display: datasets.length > 1 || type === 'pie', labels: { color: '#F5F3FF', font: { size: 11 } } }
       },
       scales: type === 'pie' ? {} : {
         x: { ticks: { color: '#8B93A7', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.06)' } },
@@ -584,13 +654,9 @@ async function sendQuestion() {
     const result = await res.json();
     loadingBubble.remove();
 
-    if (!res.ok) {
-      addBubble(result.error || 'Something went wrong.', 'bot');
-    } else if (result.isChart) {
-      addChart(result);
-    } else {
-      addBubble(result.answer, 'bot');
-    }
+    if (!res.ok) addBubble(result.error || 'Something went wrong.', 'bot');
+    else if (result.isChart) addChart(result);
+    else addBubble(result.answer, 'bot');
   } catch (err) {
     loadingBubble.remove();
     addBubble('Could not connect. Please try again.', 'bot');
