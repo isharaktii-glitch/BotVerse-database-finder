@@ -5,6 +5,7 @@
     "pg": "^8.11.5",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
-    "@google/generative-ai": "^0.21.0"
+    "@google/generative-ai": "^0.21.0",
+    "pdf-parse": "^1.1.1"
   }
 }
