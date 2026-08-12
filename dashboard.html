@@ -22,7 +22,6 @@
     --error: #FF6B6B;
   }
 
-  * { box-sizing: border-box; }
   body {
     background: var(--bg);
     color: var(--text);
@@ -39,6 +38,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
   }
   .logo {
     font-family: 'Space Grotesk', sans-serif;
@@ -54,7 +55,7 @@
     border-radius: 50%;
     box-shadow: 0 0 12px var(--violet);
   }
-  .header-right { display: flex; align-items: center; gap: 16px; }
+  .header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .business-name { font-size: 14px; color: var(--muted); }
   .logout-btn {
     background: transparent;
@@ -173,8 +174,8 @@
     display: none;
   }
   .doc-result.show { display: block; }
-  .doc-result .row { display: flex; justify-content: space-between; padding: 4px 0; color: var(--muted); }
-  .doc-result .row b { color: var(--text); font-weight: 500; }
+  .doc-result .row { display: flex; justify-content: space-between; padding: 4px 0; color: var(--muted); gap: 10px; }
+  .doc-result .row b { color: var(--text); font-weight: 500; text-align: right; }
   .priority-high { color: var(--error); font-weight: 600; }
   .priority-medium { color: #FFB84D; font-weight: 600; }
   .priority-low { color: var(--teal); font-weight: 600; }
@@ -284,6 +285,49 @@
   }
   .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+  .notif-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .notif-modal.show { display: flex; }
+  .notif-box {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 380px;
+    width: 100%;
+  }
+  .notif-box h2 { font-size: 18px; margin-bottom: 6px; }
+  .notif-box .desc { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+  .notif-row { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: var(--border); border-radius: 24px; transition: 0.2s;
+  }
+  .slider::before {
+    content: ''; position: absolute; height: 18px; width: 18px;
+    left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.2s;
+  }
+  .switch input:checked + .slider { background: var(--violet); }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
+  .notif-box .field { margin-bottom: 14px; }
+  .notif-box .field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--muted); }
+  .notif-box .field input, .notif-box .field select {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px; font-family: 'Inter', sans-serif;
+  }
+  .notif-actions { display: flex; gap: 10px; margin-top: 4px; }
+  .notif-actions .link-btn, .notif-actions .logout-btn { flex: 1; }
+
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
   button:focus-visible, input:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 </style>
@@ -294,6 +338,7 @@
   <div class="logo"><span class="logo-dot"></span>BotVerse</div>
   <div class="header-right">
     <span class="business-name" id="businessName">Loading...</span>
+    <button class="logout-btn" id="notifBtn">🔔 Notifications</button>
     <button class="logout-btn" id="logoutBtn">Log out</button>
   </div>
 </header>
@@ -362,6 +407,41 @@
     <div class="chat-input-row">
       <input type="text" id="chatInput" placeholder="Ask about your data..." disabled>
       <button class="send-btn" id="sendBtn" disabled>Ask</button>
+    </div>
+  </div>
+
+  <div class="notif-modal" id="notifModal">
+    <div class="notif-box">
+      <h2>Deadline notifications</h2>
+      <p class="desc">Get an email before your document deadlines arrive.</p>
+
+      <div class="notif-row">
+        <label class="switch">
+          <input type="checkbox" id="notifEnabled">
+          <span class="slider"></span>
+        </label>
+        <span>Enable notifications</span>
+      </div>
+
+      <div class="field">
+        <label for="notifEmail">Email address</label>
+        <input type="email" id="notifEmail" placeholder="you@business.com">
+      </div>
+
+      <div class="field">
+        <label for="notifDays">Notify me</label>
+        <select id="notifDays">
+          <option value="1">1 day before</option>
+          <option value="3">3 days before</option>
+          <option value="7">7 days before</option>
+        </select>
+      </div>
+
+      <div class="notif-actions">
+        <button class="link-btn" id="notifSave">Save</button>
+        <button class="logout-btn" id="notifClose">Close</button>
+      </div>
+      <div class="error-text" id="notifStatus"></div>
     </div>
   </div>
 </div>
@@ -669,6 +749,60 @@ async function sendQuestion() {
 
 sendBtn.addEventListener('click', sendQuestion);
 chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendQuestion(); });
+
+const notifBtn = document.getElementById('notifBtn');
+const notifModal = document.getElementById('notifModal');
+const notifClose = document.getElementById('notifClose');
+const notifSave = document.getElementById('notifSave');
+const notifEnabled = document.getElementById('notifEnabled');
+const notifEmail = document.getElementById('notifEmail');
+const notifDays = document.getElementById('notifDays');
+const notifStatus = document.getElementById('notifStatus');
+
+notifBtn.addEventListener('click', async () => {
+  notifModal.classList.add('show');
+  try {
+    const res = await fetch('/api/notification-settings', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const settings = await res.json();
+    notifEnabled.checked = settings.enabled;
+    notifEmail.value = settings.notify_email || user.email || '';
+    notifDays.value = settings.days_before_deadline || 3;
+  } catch (err) {}
+});
+
+notifClose.addEventListener('click', () => notifModal.classList.remove('show'));
+
+notifSave.addEventListener('click', async () => {
+  notifStatus.classList.remove('show');
+  notifSave.disabled = true;
+  notifSave.textContent = 'Saving...';
+
+  try {
+    const res = await fetch('/api/notification-settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        enabled: notifEnabled.checked,
+        notifyEmail: notifEmail.value.trim(),
+        daysBeforeDeadline: parseInt(notifDays.value)
+      })
+    });
+    if (!res.ok) throw new Error('Save failed');
+    notifStatus.textContent = 'Saved!';
+    notifStatus.style.color = 'var(--teal)';
+    notifStatus.classList.add('show');
+    setTimeout(() => notifModal.classList.remove('show'), 800);
+  } catch (err) {
+    notifStatus.textContent = 'Could not save. Please try again.';
+    notifStatus.style.color = 'var(--error)';
+    notifStatus.classList.add('show');
+  }
+
+  notifSave.disabled = false;
+  notifSave.textContent = 'Save';
+});
 </script>
 
 </body>
