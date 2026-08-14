@@ -42,6 +42,8 @@ module.exports = async (req, res) => {
     let contextText;
     if (businessData && businessData.type === 'website') {
       contextText = `Website content from ${businessData.url}:\n\n${businessData.content}`;
+    } else if (businessData && businessData.type === 'document') {
+      contextText = `Document content:\n\n${businessData.text}`;
     } else {
       contextText = JSON.stringify(businessData).slice(0, 15000);
     }
@@ -52,15 +54,26 @@ ${contextText}
 
 The user's question: "${question}"
 
-If the user is asking for a chart, graph, or visual comparison, respond ONLY with valid JSON in this exact format, nothing else, no markdown fences:
-{"isChart": true, "chartType": "bar", "title": "Chart title here", "labels": ["Label1", "Label2"], "datasets": [{"label": "Series name", "data": [123, 456]}]}
+Decide the BEST way to answer based on what the user is actually asking. Respond ONLY with valid JSON, no markdown fences, no extra text, using this exact structure:
 
-Use "bar" for comparisons, "line" for trends over time, "pie" for proportions. Calculate all values accurately based on the actual data shown above. Write the title and labels in the same language as the question. Use at most 8 labels.
+{
+  "answer": "A short, clear explanation in 2-4 sentences, in the same language as the question.",
+  "includeTable": true or false,
+  "table": { "headers": ["Col1", "Col2"], "rows": [["val1", "val2"], ["val3", "val4"]] } or null,
+  "includeChart": true or false,
+  "chart": { "chartType": "bar|line|pie", "title": "Chart title", "labels": ["Label1", "Label2"], "datasets": [{"label": "Series name", "data": [123, 456]}] } or null
+}
 
-If the user is asking a normal question, respond ONLY with valid JSON in this format:
-{"isChart": false, "answer": "Your answer here in the same language as the question, 3-4 sentences max"}
+Rules for deciding format:
+- If the question asks for a comparison, breakdown, or list of multiple items (e.g. "top products", "daily income and expenses", "sales by category") → set includeTable to true with clean, well-organized rows. Use at most 10 rows unless the user asks for more.
+- If the question implies a visual trend or comparison would help (e.g. "compare X and Y", "show me the trend", "which is highest") → set includeChart to true.
+- If the question is a simple factual question with one answer (e.g. "what was my total revenue", "how many customers do I have") → set both includeTable and includeChart to false, just answer in the "answer" field.
+- Never include a table AND chart both unless the question truly needs both to be understood.
+- Calculate all values accurately based on the actual data shown above.
+- Table headers and chart labels must be in the same language as the question.
+- Use at most 8 labels/rows in charts to keep them readable.
 
-Respond with ONLY the JSON object on a single line, nothing else, no markdown code fences.`;
+Respond with ONLY the JSON object, nothing else, no markdown code fences.`;
 
     const result = await model.generateContent(prompt);
     let rawText = result.response.text().trim();
@@ -70,10 +83,15 @@ Respond with ONLY the JSON object on a single line, nothing else, no markdown co
     try {
       parsed = JSON.parse(rawText);
     } catch (parseErr) {
-      parsed = { isChart: false, answer: rawText };
+      parsed = { answer: rawText, includeTable: false, table: null, includeChart: false, chart: null };
     }
 
-    const historyText = parsed.isChart ? ('[Chart] ' + parsed.title) : parsed.answer;
+    // Safety defaults in case AI omits fields
+    if (typeof parsed.includeTable !== 'boolean') parsed.includeTable = false;
+    if (typeof parsed.includeChart !== 'boolean') parsed.includeChart = false;
+    if (!parsed.answer) parsed.answer = '';
+
+    const historyText = parsed.answer || (parsed.includeChart ? '[Chart] ' + (parsed.chart && parsed.chart.title) : 'Answered');
     await pool.query(
       'INSERT INTO chat_history (user_id, question, answer, conversation_id) VALUES ($1, $2, $3, $4)',
       [decoded.userId, question, historyText, conversationId]
