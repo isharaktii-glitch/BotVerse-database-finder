@@ -11,17 +11,14 @@ module.exports = async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ error: 'No token provided' });
 
-  const token = authHeader.replace('Bearer ', '');
-
   let decoded;
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
+    decoded = jwt.verify(authHeader.replace('Bearer ', ''), process.env.JWT_SECRET);
   } catch (err) {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 
-  const { question, conversationId } = req.body;
-  if (!question) return res.status(400).json({ error: 'Question required' });
+  const { action, question, conversationId } = req.body;
   if (!conversationId) return res.status(400).json({ error: 'conversationId required' });
 
   try {
@@ -36,8 +33,48 @@ module.exports = async (req, res) => {
 
     const businessData = dataResult.rows[0].data_json;
     const dataName = dataResult.rows[0].data_name;
-
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    // -------------------------------------------------------------
+    // FEATURE 2 & 3: AUTOMATED KEY INSIGHTS GENERATION
+    // -------------------------------------------------------------
+    if (action === 'get_insights') {
+      const contextText = JSON.stringify(businessData).slice(0, 15000);
+      const insightPrompt = `Analyze this business data and extract 3 KEY INSIGHTS:
+1. Top Performing Item / Highest Revenue area
+2. Key Trend / Growth pattern
+3. Potential Business Risk or Area of Improvement
+
+Data:
+${contextText}
+
+Respond ONLY with JSON in this exact structure:
+{
+  "insights": [
+    { "id": "top_product", "type": "success", "title": "Top Product / Feature", "summary": "Short 1-sentence summary", "detail": "Detailed breakdown explaining why it's performing well and exact metrics." },
+    { "id": "trend", "type": "info", "title": "Key Business Trend", "summary": "Short 1-sentence summary", "detail": "Detailed explanation of the trend observed over time." },
+    { "id": "risk", "type": "warning", "title": "Identified Risk / Warning", "summary": "Short 1-sentence summary", "detail": "Detailed explanation of the potential risk and mitigation advice." }
+  ]
+}
+DO NOT INCLUDE MARKDOWN CODE FENCES. OUTPUT ONLY CLEAN JSON.`;
+
+      const result = await model.generateContent(insightPrompt);
+      let rawText = result.response.text().trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+      
+      let parsed;
+      try {
+        parsed = JSON.parse(rawText);
+      } catch(e) {
+        return res.status(500).json({ error: 'Failed to parse insights JSON' });
+      }
+
+      return res.status(200).json({ success: true, insights: parsed.insights });
+    }
+
+    // -------------------------------------------------------------
+    // FEATURE 1: ASK QUESTION (WITH MARKDOWN TABLES & CHARTS)
+    // -------------------------------------------------------------
+    if (!question) return res.status(400).json({ error: 'Question required' });
 
     let contextText;
     if (businessData && businessData.type === 'website') {
@@ -46,30 +83,28 @@ module.exports = async (req, res) => {
       contextText = JSON.stringify(businessData).slice(0, 15000);
     }
 
-    const prompt = `You are an expert business data assistant. The user connected a data source called "${dataName}" with this content:
+    const askPrompt = `You are an expert business data assistant. The user connected a data source called "${dataName}" with this content:
 
 ${contextText}
 
 User's question: "${question}"
 
 Respond based on these rules:
-
 1. CHART REQUEST: If the user explicitly asks for a chart, graph, or visual rendering, respond ONLY with JSON in this format:
 {"isChart": true, "chartType": "bar", "title": "Chart title", "labels": ["Label1", "Label2"], "datasets": [{"label": "Series Name", "data": [100, 200]}]}
 (Use "bar" for comparisons, "line" for trends, "pie" for proportions. Max 8 labels).
 
-2. TABULAR / COMPARISON REQUEST: If the user is asking for tabular data, comparisons (e.g., "income vs expenses", "monthly breakdown", "product comparison"), formatted lists, or structured financial numbers, format the "answer" field using clean **Markdown Tables** (| Header1 | Header2 |).
+2. TABULAR / COMPARISON REQUEST: If the user asks for tabular data, comparisons (e.g., "income vs expenses", "monthly breakdown"), or formatted lists, format the "answer" field using clean **Markdown Tables** (| Header1 | Header2 |).
 
-3. REGULAR QUESTION: Provide a clear, concise plain text answer (3-4 sentences max).
+3. REGULAR QUESTION: Clear plain text answer (3-4 sentences max).
 
 JSON OUTPUT FORMAT FOR TEXT/TABLE ANSWERS:
-{"isChart": false, "answer": "Your answer string here (use markdown tables inside this string ONLY if the question requires tabular/comparative data)"}
+{"isChart": false, "answer": "Your answer string here"}
 
-OUTPUT ONLY VALID JSON ON A SINGLE LINE. NO MARKDOWN CODE FENCES (no \`\`\`json). WRITE IN THE SAME LANGUAGE AS THE USER'S QUESTION.`;
+OUTPUT ONLY VALID JSON ON A SINGLE LINE. NO MARKDOWN CODE FENCES. WRITE IN THE SAME LANGUAGE AS THE USER'S QUESTION.`;
 
-    const result = await model.generateContent(prompt);
-    let rawText = result.response.text().trim();
-    rawText = rawText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+    const result = await model.generateContent(askPrompt);
+    let rawText = result.response.text().trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
 
     let parsed;
     try {
@@ -84,10 +119,10 @@ OUTPUT ONLY VALID JSON ON A SINGLE LINE. NO MARKDOWN CODE FENCES (no \`\`\`json)
       [decoded.userId, question, historyText, conversationId]
     );
 
-    res.status(200).json({ success: true, ...parsed });
+    return res.status(200).json({ success: true, ...parsed });
 
   } catch (err) {
     console.error('ASK ERROR:', err.message);
-    res.status(500).json({ error: 'Could not process your question: ' + err.message });
+    res.status(500).json({ error: 'Could not process request: ' + err.message });
   }
 };
