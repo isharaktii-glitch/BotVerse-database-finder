@@ -37,43 +37,35 @@ module.exports = async (req, res) => {
     const businessData = dataResult.rows[0].data_json;
     const dataName = dataResult.rows[0].data_name;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     let contextText;
     if (businessData && businessData.type === 'website') {
       contextText = `Website content from ${businessData.url}:\n\n${businessData.content}`;
-    } else if (businessData && businessData.type === 'document') {
-      contextText = `Document content:\n\n${businessData.text}`;
     } else {
       contextText = JSON.stringify(businessData).slice(0, 15000);
     }
 
-    const prompt = `You are a business data assistant. The user connected a data source called "${dataName}" with this content:
+    const prompt = `You are an expert business data assistant. The user connected a data source called "${dataName}" with this content:
 
 ${contextText}
 
-The user's question: "${question}"
+User's question: "${question}"
 
-Decide the BEST way to answer based on what the user is actually asking. Respond ONLY with valid JSON, no markdown fences, no extra text, using this exact structure:
+Respond based on these rules:
 
-{
-  "answer": "A short, clear explanation in 2-4 sentences, in the same language as the question.",
-  "includeTable": true or false,
-  "table": { "headers": ["Col1", "Col2"], "rows": [["val1", "val2"], ["val3", "val4"]] } or null,
-  "includeChart": true or false,
-  "chart": { "chartType": "bar|line|pie", "title": "Chart title", "labels": ["Label1", "Label2"], "datasets": [{"label": "Series name", "data": [123, 456]}] } or null
-}
+1. CHART REQUEST: If the user explicitly asks for a chart, graph, or visual rendering, respond ONLY with JSON in this format:
+{"isChart": true, "chartType": "bar", "title": "Chart title", "labels": ["Label1", "Label2"], "datasets": [{"label": "Series Name", "data": [100, 200]}]}
+(Use "bar" for comparisons, "line" for trends, "pie" for proportions. Max 8 labels).
 
-Rules for deciding format:
-- If the question asks for a comparison, breakdown, or list of multiple items (e.g. "top products", "daily income and expenses", "sales by category") → set includeTable to true with clean, well-organized rows. Use at most 10 rows unless the user asks for more.
-- If the question implies a visual trend or comparison would help (e.g. "compare X and Y", "show me the trend", "which is highest") → set includeChart to true.
-- If the question is a simple factual question with one answer (e.g. "what was my total revenue", "how many customers do I have") → set both includeTable and includeChart to false, just answer in the "answer" field.
-- Never include a table AND chart both unless the question truly needs both to be understood.
-- Calculate all values accurately based on the actual data shown above.
-- Table headers and chart labels must be in the same language as the question.
-- Use at most 8 labels/rows in charts to keep them readable.
+2. TABULAR / COMPARISON REQUEST: If the user is asking for tabular data, comparisons (e.g., "income vs expenses", "monthly breakdown", "product comparison"), formatted lists, or structured financial numbers, format the "answer" field using clean **Markdown Tables** (| Header1 | Header2 |).
 
-Respond with ONLY the JSON object, nothing else, no markdown code fences.`;
+3. REGULAR QUESTION: Provide a clear, concise plain text answer (3-4 sentences max).
+
+JSON OUTPUT FORMAT FOR TEXT/TABLE ANSWERS:
+{"isChart": false, "answer": "Your answer string here (use markdown tables inside this string ONLY if the question requires tabular/comparative data)"}
+
+OUTPUT ONLY VALID JSON ON A SINGLE LINE. NO MARKDOWN CODE FENCES (no \`\`\`json). WRITE IN THE SAME LANGUAGE AS THE USER'S QUESTION.`;
 
     const result = await model.generateContent(prompt);
     let rawText = result.response.text().trim();
@@ -83,15 +75,10 @@ Respond with ONLY the JSON object, nothing else, no markdown code fences.`;
     try {
       parsed = JSON.parse(rawText);
     } catch (parseErr) {
-      parsed = { answer: rawText, includeTable: false, table: null, includeChart: false, chart: null };
+      parsed = { isChart: false, answer: rawText };
     }
 
-    // Safety defaults in case AI omits fields
-    if (typeof parsed.includeTable !== 'boolean') parsed.includeTable = false;
-    if (typeof parsed.includeChart !== 'boolean') parsed.includeChart = false;
-    if (!parsed.answer) parsed.answer = '';
-
-    const historyText = parsed.answer || (parsed.includeChart ? '[Chart] ' + (parsed.chart && parsed.chart.title) : 'Answered');
+    const historyText = parsed.isChart ? ('[Chart] ' + parsed.title) : parsed.answer;
     await pool.query(
       'INSERT INTO chat_history (user_id, question, answer, conversation_id) VALUES ($1, $2, $3, $4)',
       [decoded.userId, question, historyText, conversationId]
