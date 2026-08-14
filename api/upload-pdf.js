@@ -13,7 +13,6 @@ module.exports = async (req, res) => {
   if (!authHeader) return res.status(401).json({ error: 'No token provided' });
 
   const token = authHeader.replace('Bearer ', '');
-
   let decoded;
   try {
     decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -34,7 +33,6 @@ module.exports = async (req, res) => {
     }
 
     const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
-
     const today = new Date().toISOString().split('T')[0];
 
     const prompt = `Today's date is ${today}. Analyze this document text and extract key information. Respond ONLY with valid JSON, no markdown fences, no extra text:
@@ -55,12 +53,23 @@ ${text}`;
       parsed = { docType: 'other', summary: 'Could not analyze document details.', deadlineDate: null, priority: 'low' };
     }
 
+    const convResult = await pool.query(
+      'INSERT INTO conversations (user_id, title, source_type) VALUES ($1, $2, $3) RETURNING id',
+      [decoded.userId, fileName, 'document']
+    );
+    const conversationId = convResult.rows[0].id;
+
     await pool.query(
       'INSERT INTO documents (user_id, file_name, doc_type, extracted_summary, deadline_date, priority) VALUES ($1, $2, $3, $4, $5, $6)',
       [decoded.userId, fileName, parsed.docType, parsed.summary, parsed.deadlineDate, parsed.priority]
     );
 
-    res.status(200).json({ success: true, ...parsed });
+    await pool.query(
+      'INSERT INTO business_data (user_id, data_name, data_json, conversation_id) VALUES ($1, $2, $3, $4)',
+      [decoded.userId, fileName, JSON.stringify({ type: 'document', text: text.slice(0, 8000), summary: parsed.summary }), conversationId]
+    );
+
+    res.status(200).json({ success: true, ...parsed, conversationId });
 
   } catch (err) {
     console.error('PDF UPLOAD ERROR:', err.message);
