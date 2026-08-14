@@ -69,7 +69,7 @@
   .error-text { color: var(--error); font-size: 13px; margin-top: 10px; display: none; }
   .error-text.show { display: block; }
 
-  /* Insights Widgets CSS */
+  /* Insights Section CSS */
   .insights-section { margin-bottom: 20px; display: none; }
   .insights-section.active { display: block; }
   .insights-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
@@ -188,7 +188,7 @@
 
     <!-- Key Insights Dashboard Section -->
     <div class="insights-section" id="insightsSection">
-      <div class="insights-title">⚡ Automated Key Insights</div>
+      <div class="insights-title">⚡ Key Insights</div>
       <div class="insights-grid" id="insightsGrid"></div>
     </div>
 
@@ -315,16 +315,16 @@ function addBubble(text, type, msgId) {
   return bubble;
 }
 
-// Automatically Fetch & Display Key Insights Cards
+// Fetch Key Insights via /api/ask using action parameter
 async function fetchAndRenderInsights(convId) {
   insightsGrid.innerHTML = '<div style="font-size:12px; color:var(--muted)">Analyzing data for insights...</div>';
   insightsSection.classList.add('active');
 
   try {
-    const res = await fetch('/api/generate-insights', {
+    const res = await fetch('/api/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ conversationId: convId })
+      body: JSON.stringify({ action: 'get_insights', conversationId: convId })
     });
     const result = await res.json();
 
