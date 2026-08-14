@@ -29,15 +29,20 @@ module.exports = async (req, res) => {
   }
 
   try {
-    await pool.query('DELETE FROM business_data WHERE user_id = $1', [decoded.userId]);
+    const convResult = await pool.query(
+      'INSERT INTO conversations (user_id, title, source_type) VALUES ($1, $2, $3) RETURNING id',
+      [decoded.userId, dataName, 'file']
+    );
+    const conversationId = convResult.rows[0].id;
 
     await pool.query(
-      'INSERT INTO business_data (user_id, data_name, data_json) VALUES ($1, $2, $3)',
-      [decoded.userId, dataName, JSON.stringify(data)]
+      'INSERT INTO business_data (user_id, data_name, data_json, conversation_id) VALUES ($1, $2, $3, $4)',
+      [decoded.userId, dataName, JSON.stringify(data), conversationId]
     );
 
-    res.status(200).json({ success: true, rowCount: data.length });
+    res.status(200).json({ success: true, rowCount: data.length, conversationId });
   } catch (err) {
+    console.error('UPLOAD DATA ERROR:', err.message);
     res.status(500).json({ error: 'Server error while saving data' });
   }
 };
