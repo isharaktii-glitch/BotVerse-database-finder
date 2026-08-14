@@ -145,10 +145,10 @@
       </div>
       <div class="source-panel" id="panel-document">
         <div class="upload-row">
-          <label class="file-label">Choose PDF<input type="file" id="pdfInput" accept=".pdf,application/pdf"></label>
+          <label class="file-label">Choose file<input type="file" id="pdfInput" accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.webp"></label>
           <span class="file-status" id="pdfStatus">No document uploaded yet</span>
         </div>
-        <p class="link-hint">BotVerse will read the document and pick out key dates.</p>
+        <p class="link-hint">Supports PDF, Word (.docx), TXT, and images (JPG/PNG). BotVerse will read it and pick out key dates.</p>
         <div class="doc-result" id="docResult"></div>
       </div>
       <div class="error-text" id="sourceError"></div>
@@ -419,17 +419,32 @@ websiteBtn.addEventListener('click', async () => {
 const pdfInput = document.getElementById('pdfInput');
 const pdfStatus = document.getElementById('pdfStatus');
 const docResult = document.getElementById('docResult');
+const ALLOWED_DOC_EXTS = ['pdf', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'webp'];
+const MAX_DOC_SIZE_BYTES = 10 * 1024 * 1024;
 pdfInput.addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  pdfStatus.textContent = 'Reading document...';
-  docResult.classList.remove('show');
   hideError();
+  docResult.classList.remove('show');
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!ALLOWED_DOC_EXTS.includes(ext)) {
+    pdfStatus.textContent = 'No document uploaded yet';
+    showError('Unsupported file type. Please upload PDF, DOCX, TXT, JPG, or PNG.');
+    pdfInput.value = '';
+    return;
+  }
+  if (file.size > MAX_DOC_SIZE_BYTES) {
+    pdfStatus.textContent = 'No document uploaded yet';
+    showError('File too large. Please keep it under 10MB.');
+    pdfInput.value = '';
+    return;
+  }
+  pdfStatus.textContent = 'Reading document...';
   const reader = new FileReader();
   reader.onload = async (event) => {
     const base64Data = event.target.result.split(',')[1];
     try {
-      const res = await fetch('/api/upload-pdf', {
+      const res = await fetch('/api/upload-document', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: JSON.stringify({ fileName: file.name, base64Data })
