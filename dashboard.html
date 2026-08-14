@@ -11,6 +11,7 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
     --bg: #0B0F1A; --bg-elevated: #131926; --violet: #7C5CFF; --teal: #2DD4BF;
+    --pink: #FF6B9D; --amber: #FFB84D; --blue: #4DA6FF;
     --text: #F5F3FF; --muted: #8B93A7; --border: rgba(255,255,255,0.08); --error: #FF6B6B;
   }
   body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; min-height: 100vh; }
@@ -63,10 +64,44 @@
   .doc-result .row { display: flex; justify-content: space-between; padding: 4px 0; color: var(--muted); gap: 10px; }
   .doc-result .row b { color: var(--text); font-weight: 500; text-align: right; }
   .priority-high { color: var(--error); font-weight: 600; }
-  .priority-medium { color: #FFB84D; font-weight: 600; }
+  .priority-medium { color: var(--amber); font-weight: 600; }
   .priority-low { color: var(--teal); font-weight: 600; }
   .error-text { color: var(--error); font-size: 13px; margin-top: 10px; display: none; }
   .error-text.show { display: block; }
+
+  /* Highlights section */
+  .highlights-section { margin-bottom: 20px; }
+  .highlights-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .highlights-header h3 { font-size: 14px; }
+  .highlights-btn { background: linear-gradient(135deg, var(--violet), var(--pink)); color: white; border: none; padding: 9px 16px; border-radius: 100px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; display: flex; align-items: center; gap: 6px; }
+  .highlights-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .highlights-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .highlight-card {
+    background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; padding: 16px;
+    position: relative; overflow: hidden; opacity: 0; transform: translateY(8px); animation: cardIn 0.4s ease forwards;
+  }
+  .highlight-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--violet), var(--teal), var(--pink), var(--amber));
+  }
+  @keyframes cardIn { to { opacity: 1; transform: translateY(0); } }
+  .highlight-icon { font-size: 22px; margin-bottom: 8px; }
+  .highlight-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .highlight-desc { font-size: 12px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+  .highlight-explain-btn { background: rgba(124,92,255,0.12); border: 1px solid rgba(124,92,255,0.3); color: var(--violet); padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
+  .highlight-explain-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .highlights-empty { font-size: 12px; color: var(--muted); text-align: center; padding: 20px 0; }
+
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+  .modal-overlay.show { display: flex; }
+  .modal-box { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 18px; max-width: 520px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 26px; position: relative; }
+  .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; padding-right: 24px; display: flex; align-items: center; gap: 8px; }
+  .modal-body { font-size: 14px; color: var(--muted); line-height: 1.7; margin-top: 14px; white-space: pre-wrap; }
+  .modal-loading { text-align: center; padding: 30px 0; color: var(--muted); font-size: 14px; font-style: italic; }
+  .modal-chart-wrap { position: relative; height: 240px; margin-top: 18px; }
+
   .chat-section { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 16px; display: flex; flex-direction: column; height: 500px; }
   .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
   .empty-state { margin: auto; text-align: center; color: var(--muted); font-size: 14px; max-width: 280px; }
@@ -79,10 +114,21 @@
   .bubble.bot.loading { color: var(--muted); font-style: italic; }
   .msg-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; padding: 4px; flex-shrink: 0; }
   .msg-del:hover { color: var(--error); }
-  .chart-card { align-self: stretch; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 14px; padding: 16px; opacity: 0; transform: translateY(8px); animation: chartIn 0.4s ease forwards; }
+
+  /* Answer card (text + optional table + optional chart) */
+  .answer-card { align-self: stretch; max-width: 92%; opacity: 0; transform: translateY(8px); animation: chartIn 0.4s ease forwards; }
   @keyframes chartIn { to { opacity: 1; transform: translateY(0); } }
+  .answer-text-bubble { background: rgba(255,255,255,0.06); border-radius: 14px; border-bottom-left-radius: 4px; padding: 11px 15px; font-size: 14px; white-space: pre-wrap; margin-bottom: 10px; }
+  .data-table-wrap { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 14px; padding: 14px; overflow-x: auto; margin-bottom: 10px; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table th { text-align: left; padding: 8px 12px; color: var(--teal); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .data-table td { padding: 8px 12px; color: var(--text); border-bottom: 1px solid rgba(255,255,255,0.04); white-space: nowrap; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: rgba(124,92,255,0.06); }
+  .chart-card { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
   .chart-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 12px; }
   .chart-canvas-wrap { position: relative; height: 220px; }
+
   .chat-input-row { display: flex; gap: 10px; padding: 16px; border-top: 1px solid var(--border); }
   .chat-input-row input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; color: var(--text); font-size: 14px; font-family: 'Inter', sans-serif; }
   .chat-input-row input:focus { outline: none; border-color: var(--violet); }
@@ -154,6 +200,15 @@
       <div class="error-text" id="sourceError"></div>
       <div id="dataBadge"></div>
     </div>
+
+    <div class="highlights-section" id="highlightsSection" style="display:none;">
+      <div class="highlights-header">
+        <h3>✨ Business Highlights</h3>
+        <button class="highlights-btn" id="highlightsBtn">✨ Show Highlights</button>
+      </div>
+      <div class="highlights-grid" id="highlightsGrid"></div>
+    </div>
+
     <div class="chat-section">
       <div class="chat-messages" id="chatMessages">
         <div class="empty-state">
@@ -168,6 +223,15 @@
     </div>
   </div>
 </div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <button class="modal-close" id="modalClose">×</button>
+    <div class="modal-title" id="modalTitle"></div>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
 <script>
 const token = localStorage.getItem('botverse_token');
 const userStr = localStorage.getItem('botverse_user');
@@ -195,8 +259,13 @@ const chatMessages = document.getElementById('chatMessages');
 const dataBadge = document.getElementById('dataBadge');
 const sourceError = document.getElementById('sourceError');
 const convList = document.getElementById('convList');
+const highlightsSection = document.getElementById('highlightsSection');
+const highlightsGrid = document.getElementById('highlightsGrid');
+const highlightsBtn = document.getElementById('highlightsBtn');
+
 function showError(msg) { sourceError.textContent = msg; sourceError.classList.add('show'); }
 function hideError() { sourceError.classList.remove('show'); }
+
 function onDataConnected(label, conversationId) {
   dataBadge.innerHTML = '<div class="data-badge">' + label + '</div>';
   chatInput.disabled = false;
@@ -205,7 +274,12 @@ function onDataConnected(label, conversationId) {
   hideError();
   activeConversationId = conversationId;
   loadConversations();
+  highlightsSection.style.display = 'block';
+  highlightsGrid.innerHTML = '';
+  highlightsBtn.disabled = false;
+  highlightsBtn.textContent = '✨ Show Highlights';
 }
+
 function addBubble(text, type, msgId) {
   const emptyState = chatMessages.querySelector('.empty-state');
   if (emptyState) emptyState.remove();
@@ -229,6 +303,7 @@ function addBubble(text, type, msgId) {
   chatMessages.scrollTop = chatMessages.scrollHeight;
   return bubble;
 }
+
 async function deleteMessage(msgId, rowEl) {
   try {
     await fetch('/api/messages', {
@@ -239,6 +314,7 @@ async function deleteMessage(msgId, rowEl) {
     rowEl.remove();
   } catch (err) { console.error('Could not delete message'); }
 }
+
 async function loadConversations(dateFilter) {
   try {
     let url = '/api/conversations';
@@ -270,6 +346,7 @@ async function loadConversations(dateFilter) {
     });
   } catch (err) { console.error('Could not load conversations'); }
 }
+
 async function deleteConversation(convId) {
   try {
     await fetch('/api/conversations', {
@@ -283,15 +360,22 @@ async function deleteConversation(convId) {
       chatInput.disabled = true;
       sendBtn.disabled = true;
       dataBadge.innerHTML = '';
+      highlightsSection.style.display = 'none';
+      highlightsGrid.innerHTML = '';
     }
     loadConversations();
   } catch (err) { console.error('Could not delete conversation'); }
 }
+
 async function openConversation(convId, title) {
   activeConversationId = convId;
   chatInput.disabled = false;
   sendBtn.disabled = false;
   dataBadge.innerHTML = '<div class="data-badge">' + title + '</div>';
+  highlightsSection.style.display = 'block';
+  highlightsGrid.innerHTML = '';
+  highlightsBtn.disabled = false;
+  highlightsBtn.textContent = '✨ Show Highlights';
   try {
     const res = await fetch('/api/messages?conversationId=' + convId, {
       headers: { 'Authorization': 'Bearer ' + token }
@@ -310,6 +394,7 @@ async function openConversation(convId, title) {
   document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
   loadConversations();
 }
+
 document.getElementById('dateFilterBtn').addEventListener('click', () => {
   const date = document.getElementById('dateFilter').value;
   if (date) loadConversations(date);
@@ -329,10 +414,13 @@ document.getElementById('bulkDeleteBtn').addEventListener('click', async () => {
     chatInput.disabled = true;
     sendBtn.disabled = true;
     dataBadge.innerHTML = '';
+    highlightsSection.style.display = 'none';
+    highlightsGrid.innerHTML = '';
     loadConversations();
   } catch (err) { console.error('Could not bulk delete'); }
 });
 loadConversations();
+
 const fileInput = document.getElementById('fileInput');
 const fileStatus = document.getElementById('fileStatus');
 fileInput.addEventListener('change', async (e) => {
@@ -374,6 +462,7 @@ fileInput.addEventListener('change', async (e) => {
   };
   if (isExcel) reader.readAsBinaryString(file); else reader.readAsText(file);
 });
+
 const sheetInput = document.getElementById('sheetInput');
 const sheetBtn = document.getElementById('sheetBtn');
 sheetBtn.addEventListener('click', async () => {
@@ -395,6 +484,7 @@ sheetBtn.addEventListener('click', async () => {
   sheetBtn.disabled = false;
   sheetBtn.textContent = 'Connect';
 });
+
 const websiteInput = document.getElementById('websiteInput');
 const websiteBtn = document.getElementById('websiteBtn');
 websiteBtn.addEventListener('click', async () => {
@@ -416,6 +506,7 @@ websiteBtn.addEventListener('click', async () => {
   websiteBtn.disabled = false;
   websiteBtn.textContent = 'Connect';
 });
+
 const pdfInput = document.getElementById('pdfInput');
 const pdfStatus = document.getElementById('pdfStatus');
 const docResult = document.getElementById('docResult');
@@ -464,45 +555,124 @@ pdfInput.addEventListener('change', async (e) => {
   };
   reader.readAsDataURL(file);
 });
+
 const chartColors = ['#7C5CFF', '#2DD4BF', '#FF6B9D', '#FFB84D', '#4DA6FF', '#B084FF', '#4DFFB8', '#FF8A65'];
-function addChart(chartData) {
-  const emptyState = chatMessages.querySelector('.empty-state');
-  if (emptyState) emptyState.remove();
-  const card = document.createElement('div');
-  card.className = 'chart-card';
-  const titleEl = document.createElement('div');
-  titleEl.className = 'chart-title';
-  titleEl.textContent = chartData.title || 'Chart';
-  card.appendChild(titleEl);
-  const wrap = document.createElement('div');
-  wrap.className = 'chart-canvas-wrap';
-  const canvas = document.createElement('canvas');
-  wrap.appendChild(canvas);
-  card.appendChild(wrap);
-  chatMessages.appendChild(card);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+function makeGradient(ctx, colorHex) {
+  const gradient = ctx.createLinearGradient(0, 0, 0, 220);
+  gradient.addColorStop(0, colorHex + 'EE');
+  gradient.addColorStop(1, colorHex + '33');
+  return gradient;
+}
+
+function renderChartInto(canvas, chartData) {
   const ctx = canvas.getContext('2d');
   const type = chartData.chartType || 'bar';
-  const datasets = (chartData.datasets || []).map((ds, i) => ({
-    label: ds.label || 'Data', data: ds.data || [],
-    backgroundColor: type === 'pie' ? chartColors : chartColors[i % chartColors.length] + 'CC',
-    borderColor: chartColors[i % chartColors.length],
-    borderWidth: type === 'line' ? 2 : 1, borderRadius: type === 'bar' ? 6 : 0,
-    tension: 0.3, fill: type === 'line' ? false : true
-  }));
-  new Chart(ctx, {
+  const datasets = (chartData.datasets || []).map((ds, i) => {
+    const baseColor = chartColors[i % chartColors.length];
+    return {
+      label: ds.label || 'Data', data: ds.data || [],
+      backgroundColor: type === 'pie' ? chartColors : (type === 'bar' ? makeGradient(ctx, baseColor) : baseColor + '33'),
+      borderColor: chartColors,
+      pointBackgroundColor: baseColor,
+      pointBorderColor: '#fff',
+      pointRadius: type === 'line' ? 4 : 0,
+      borderWidth: type === 'line' ? 3 : (type === 'pie' ? 2 : 0),
+      borderRadius: type === 'bar' ? 8 : 0,
+      tension: 0.35, fill: type === 'line' ? true : true
+    };
+  });
+  return new Chart(ctx, {
     type: type, data: { labels: chartData.labels || [], datasets: datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
-      animation: { duration: 900, easing: 'easeOutQuart' },
-      plugins: { legend: { display: datasets.length > 1 || type === 'pie', labels: { color: '#F5F3FF', font: { size: 11 } } } },
+      animation: { duration: 1000, easing: 'easeOutQuart' },
+      plugins: {
+        legend: { display: datasets.length > 1 || type === 'pie', labels: { color: '#F5F3FF', font: { size: 11 }, usePointStyle: true, padding: 14 } },
+        tooltip: { backgroundColor: '#131926', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 10, titleColor: '#F5F3FF', bodyColor: '#F5F3FF' }
+      },
       scales: type === 'pie' ? {} : {
-        x: { ticks: { color: '#8B93A7', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.06)' } },
-        y: { ticks: { color: '#8B93A7', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.06)' } }
+        x: { ticks: { color: '#8B93A7', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color: '#8B93A7', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
       }
     }
   });
 }
+
+function buildTable(tableData) {
+  const wrap = document.createElement('div');
+  wrap.className = 'data-table-wrap';
+  const table = document.createElement('table');
+  table.className = 'data-table';
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  (tableData.headers || []).forEach(h => {
+    const th = document.createElement('th');
+    th.textContent = h;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  (tableData.rows || []).forEach(r => {
+    const tr = document.createElement('tr');
+    r.forEach(cell => {
+      const td = document.createElement('td');
+      td.textContent = cell;
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  return wrap;
+}
+
+function addAnswerCard(result) {
+  const emptyState = chatMessages.querySelector('.empty-state');
+  if (emptyState) emptyState.remove();
+
+  const row = document.createElement('div');
+  row.className = 'bubble-row';
+  const card = document.createElement('div');
+  card.className = 'answer-card';
+
+  if (result.answer) {
+    const textBubble = document.createElement('div');
+    textBubble.className = 'answer-text-bubble';
+    textBubble.textContent = result.answer;
+    card.appendChild(textBubble);
+  }
+
+  if (result.includeTable && result.table) {
+    card.appendChild(buildTable(result.table));
+  }
+
+  if (result.includeChart && result.chart) {
+    const chartCard = document.createElement('div');
+    chartCard.className = 'chart-card';
+    const titleEl = document.createElement('div');
+    titleEl.className = 'chart-title';
+    titleEl.textContent = result.chart.title || 'Chart';
+    chartCard.appendChild(titleEl);
+    const wrap = document.createElement('div');
+    wrap.className = 'chart-canvas-wrap';
+    const canvas = document.createElement('canvas');
+    wrap.appendChild(canvas);
+    chartCard.appendChild(wrap);
+    card.appendChild(chartCard);
+    row.appendChild(card);
+    chatMessages.appendChild(row);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    renderChartInto(canvas, result.chart);
+    return;
+  }
+
+  row.appendChild(card);
+  chatMessages.appendChild(row);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
 async function sendQuestion() {
   const question = chatInput.value.trim();
   if (!question || !activeConversationId) return;
@@ -520,8 +690,7 @@ async function sendQuestion() {
     const result = await res.json();
     loadingBubble.parentElement.remove();
     if (!res.ok) addBubble(result.error || 'Something went wrong.', 'bot');
-    else if (result.isChart) addChart(result);
-    else addBubble(result.answer, 'bot');
+    else addAnswerCard(result);
   } catch (err) { loadingBubble.parentElement.remove(); addBubble('Could not connect. Please try again.', 'bot'); }
   sendBtn.disabled = false;
   chatInput.disabled = false;
@@ -530,6 +699,87 @@ async function sendQuestion() {
 }
 sendBtn.addEventListener('click', sendQuestion);
 chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendQuestion(); });
+
+/* ---------- Highlights ---------- */
+highlightsBtn.addEventListener('click', async () => {
+  if (!activeConversationId) return;
+  highlightsBtn.disabled = true;
+  highlightsBtn.textContent = 'Analyzing...';
+  highlightsGrid.innerHTML = '<div class="highlights-empty">Analyzing your data...</div>';
+  try {
+    const res = await fetch('/api/get-highlights', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ conversationId: activeConversationId })
+    });
+    const result = await res.json();
+    highlightsGrid.innerHTML = '';
+    if (!res.ok) {
+      highlightsGrid.innerHTML = '<div class="highlights-empty">' + (result.error || 'Could not generate highlights.') + '</div>';
+    } else if (!result.highlights || result.highlights.length === 0) {
+      highlightsGrid.innerHTML = '<div class="highlights-empty">No standout insights found in this data.</div>';
+    } else {
+      result.highlights.forEach(h => {
+        const card = document.createElement('div');
+        card.className = 'highlight-card';
+        card.innerHTML =
+          '<div class="highlight-icon">' + (h.icon || '💡') + '</div>' +
+          '<div class="highlight-title">' + h.title + '</div>' +
+          '<div class="highlight-desc">' + h.shortDesc + '</div>' +
+          '<button class="highlight-explain-btn">Explain more</button>';
+        card.querySelector('.highlight-explain-btn').addEventListener('click', (e) => {
+          openExplainModal(h.title, h.shortDesc, h.icon, e.target);
+        });
+        highlightsGrid.appendChild(card);
+      });
+    }
+    highlightsBtn.disabled = false;
+    highlightsBtn.textContent = '🔄 Refresh Highlights';
+  } catch (err) {
+    highlightsGrid.innerHTML = '<div class="highlights-empty">Could not connect. Please try again.</div>';
+    highlightsBtn.disabled = false;
+    highlightsBtn.textContent = '✨ Show Highlights';
+  }
+});
+
+/* ---------- Modal ---------- */
+const modalOverlay = document.getElementById('modalOverlay');
+const modalTitle = document.getElementById('modalTitle');
+const modalContent = document.getElementById('modalContent');
+document.getElementById('modalClose').addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+function closeModal() { modalOverlay.classList.remove('show'); modalContent.innerHTML = ''; }
+
+async function openExplainModal(title, shortDesc, icon, btnEl) {
+  modalTitle.textContent = (icon || '💡') + ' ' + title;
+  modalContent.innerHTML = '<div class="modal-loading">Digging deeper...</div>';
+  modalOverlay.classList.add('show');
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = 'Loading...'; }
+  try {
+    const res = await fetch('/api/explain-highlight', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ conversationId: activeConversationId, highlightTitle: title, highlightDesc: shortDesc })
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      modalContent.innerHTML = '<div class="modal-body">' + (result.error || 'Could not load explanation.') + '</div>';
+    } else {
+      modalContent.innerHTML = '<div class="modal-body">' + (result.explanation || '') + '</div>';
+      if (result.includeChart && result.chart) {
+        const chartWrap = document.createElement('div');
+        chartWrap.className = 'modal-chart-wrap';
+        const canvas = document.createElement('canvas');
+        chartWrap.appendChild(canvas);
+        modalContent.appendChild(chartWrap);
+        renderChartInto(canvas, result.chart);
+      }
+    }
+  } catch (err) {
+    modalContent.innerHTML = '<div class="modal-body">Could not connect. Please try again.</div>';
+  }
+  if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Explain more'; }
+}
 </script>
 </body>
 </html>
